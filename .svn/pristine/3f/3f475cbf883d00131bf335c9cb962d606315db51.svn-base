@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+	
+	<typeAliases>
+		<typeAlias alias="String" type="java.lang.String" />											
+		<typeAlias alias="Integer" type="java.lang.Integer" />											
+		<typeAlias alias="HashMap" type="java.util.HashMap"/>			
+		<typeAlias alias="jsonData" type="com.example.spring.attendance.entity.JsonData"/>										
+		<typeAlias alias="jsonDataVac" type="com.example.spring.attendance.entity.JsonDataVac"/>
+		<typeAlias alias="eventsData" type="com.example.spring.attendance.entity.EventsData"/>
+		<typeAlias alias="deleteEventsData" type="com.example.spring.attendance.entity.DeleteEventsData"/>
+	</typeAliases>
+	
+	<plugins>
+		<plugin interceptor="com.example.spring.common.interceptor.MybatisLogInterceptor"></plugin>
+	</plugins>
+	
+	<mappers>
+		<!-- [인사관리] START -->
+		<!-- [인사관리]-[일정관리] -->
+		<mapper resource="com/example/spring/personnel/scheduleMapper.xml"/>
+		<!-- [인사관리]-[증명서관리]-[증명서발급] -->
+		<mapper resource="com/example/spring/personnel/certificateMapper.xml"/>
+		<!-- [인사관리] END -->
+		
+		
+		<!-- 근태관리 START -->
+		<!-- [근태관리]-[출결관리] -->
+		<mapper resource="com/example/spring/attendance/attend/attendMapper.xml"/>
+		<!-- [근태관리]-[출장관리] -->
+		<mapper resource="com/example/spring/attendance/businessTrip/businessTripMapper.xml"/>
+		<!-- [근태관리]-[휴가관리] -->
+		<mapper resource="com/example/spring/attendance/vacation/vacationMapper.xml"/>
+		<!-- [근태관리]-[휴가설정관리] -->
+		<mapper resource="com/example/spring/attendance/holidaySet/holidaySetMapper.xml"/>
+		<!-- 근태관리 END -->
+		
+		
+		<!-- 권한관리 START -->
+		<!--[권한관리]-[메뉴관리]-->
+		<mapper resource="com/example/spring/management/menuTree/menuTreeMapper.xml"/>
+		<!--[권한관리]-[공통코드]-->
+		<mapper resource="com/example/spring/management/common/commonCodeMapper.xml"/>
+		<!--[권한관리]-[권한관리]-->
+		<mapper resource="com/example/spring/management/authority/authorityMapper.xml"/>
+		<!-- [권한관리] END -->
+
+		<mapper resource="com/example/spring/common/commonMapper.xml"/>	
+		<mapper resource="com/example/spring/common/dashboardMapper.xml"/>	
+
+		<!-- [급여관리] START  -->
+		<mapper resource="com/example/spring/salmanager/EmpMenuMapper.xml"/>
+		<mapper resource="com/example/spring/salmanager/PaycMenuMapper.xml"/>
+		<mapper resource="com/example/spring/salmanager/paycImfMapper.xml"/>
+		
+		<!-- [급여관리] END  -->
+	</mappers>
+		
+</configuration>

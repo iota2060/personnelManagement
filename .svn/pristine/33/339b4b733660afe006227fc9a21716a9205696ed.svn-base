@@ -1,0 +1,124 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dashboard">
+
+	<!-- 대시보드 - 사원정보 -->
+	<select id="empUserInfo" parameterType="HashMap" resultType="HashMap">
+	SELECT
+		E.EMP_NAME AS empName, #사원명
+		CONCAT(LEFT(E.EMP_INCO_DATE,4),'.',
+		SUBSTRING(E.EMP_INCO_DATE,5,2),'.',
+		RIGHT(E.EMP_INCO_DATE,2)) AS empIncoDate, #입사일
+		D.DEPT_NAME AS deptName, #부서명
+		R.RANK_NAME AS rankName, #직위명
+		CONCAT(LEFT(E.EMP_BDAY,4),'.',
+		SUBSTRING(E.EMP_BDAY,5,2),'.',
+		RIGHT(E.EMP_BDAY,2)) AS empBday, #생년월일
+		CONCAT(LEFT(E.EMP_TNO,3),'-',
+		SUBSTRING(E.EMP_TNO,4,4),'-',
+		RIGHT(E.EMP_TNO,4)) AS empTno, #전화번호
+		E.EMP_EMAIL AS empEmail #이메일주소
+	FROM EMPLOYEE E
+	INNER JOIN DEPARTMENT D
+	ON E.DEPT_CODE = D.DEPT_CODE
+	INNER JOIN RANK R
+	ON R.RANK_CODE = E.RANK_CODE
+	WHERE E.EMP_EMNO = #{empEmno}
+	</select>
+	
+	<!-- 대시보드 - 휴가일수설정에 등록된 사원인지 체크 -->
+	<select id="empVacChk" parameterType="HashMap" resultType="java.lang.Integer">
+	SELECT
+		COUNT(*)
+	FROM EMPLOYEE_REMINDING_VAC
+	WHERE EMP_EMNO = #{empEmno}
+	</select>
+	
+	<!-- 대시보드 - 사원휴가정보 -->
+	<select id="empVacInfo" parameterType="HashMap" resultType="HashMap">
+	SELECT
+		EMRE_VAC_UD AS emreVacUd, #연차일수
+		EMRE_PVAC_UD AS emrePvacUd, #유급휴가사용일수
+		EMRE_REMNDR_UD AS emreRemndrUd #잔여일수
+	FROM EMPLOYEE_REMINDING_VAC
+	WHERE EMP_EMNO = #{empEmno} AND BASE_YEAR = LEFT(#{baseMonth},4)
+	</select>
+	
+	<!-- 대시보드 - 부서 일정 -->
+	<select id="scheduleList" parameterType="HashMap" resultType="HashMap">
+	SELECT
+		D.DEPT_NAME AS deptName, #부서명
+		DP.DEPN_TIT AS depnTit, #일정 제목
+		DP.DEPN_CNTN AS depnCntn, #일정 내용
+		CONCAT(LEFT(DP.DEPN_STRT_DATE,4),'.',
+		SUBSTRING(DP.DEPN_STRT_DATE,5,2),'.',
+		SUBSTRING(DP.DEPN_STRT_DATE,7,2),'~',
+		LEFT(DP.DEPN_END_DATE,4),'.',
+		SUBSTRING(DP.DEPN_END_DATE,5,2),'.',
+		SUBSTRING(DP.DEPN_END_DATE,7,2)) AS DepnDate #시작~종료일자
+	FROM DEPARTMENT_PLAN DP
+	INNER JOIN DEPARTMENT D
+	ON DP.DEPT_CODE = D.DEPT_CODE
+	WHERE
+		DP.EMP_EMNO = #{empEmno} AND
+		(REPLACE(LEFT(NOW(),10),'-','') <![CDATA[ >= ]]> LEFT(DP.DEPN_STRT_DATE,8) OR
+		REPLACE(LEFT(NOW(),10),'-','') <![CDATA[ <= ]]> LEFT(DP.DEPN_END_DATE,8)) AND
+		DP.DEPN_DEL_YN='N'
+	</select>
+	
+	<!-- 대시보드 - 월별 유급휴가 사용일수 (사원) -->
+	<select id="monthlyVacUserChart" parameterType="HashMap" resultType="java.lang.Float">
+	SELECT
+		IFNULL(SUM(
+			IF(
+			SUBSTRING(VAST_START_DATE,5,2)=SUBSTRING(VAST_END_DATE,5,2),
+			VAST_VAC_UD,
+			(TO_DAYS(LAST_DAY(VAST_START_DATE))-TO_DAYS(VAST_START_DATE))+1
+			)
+		),0) AS cnt
+	FROM VAC_STATEMENT
+	WHERE
+		REQ_EMP_EMNO = #{empEmno} AND VAST_START_DATE LIKE CONCAT(#{baseMonth},'%')
+		AND (VAST_C = 'V1' OR VAST_C = 'V2') AND VAST_PROGRESS_SITUATION='승인완료'
+	</select>
+	
+	<!-- 대시보드 - 월별 유급휴가 사용일수 (전체) -->
+	<select id="monthlyVacAllChart" parameterType="HashMap" resultType="java.lang.Float">
+	SELECT
+		IFNULL(AVG(X.CNT),0) AS avgCnt
+	FROM 	
+	(
+	SELECT
+		SUM(
+			IF(
+			SUBSTRING(VAST_START_DATE,5,2)=SUBSTRING(VAST_END_DATE,5,2),
+			VAST_VAC_UD,
+			(TO_DAYS(LAST_DAY(VAST_START_DATE))-TO_DAYS(VAST_START_DATE))+1
+			)
+		)AS CNT
+	FROM VAC_STATEMENT
+	WHERE
+		REQ_EMP_EMNO != #{empEmno} AND VAST_START_DATE LIKE CONCAT(#{baseMonth},'%')
+		AND (VAST_C = 'V1' OR VAST_C = 'V2') AND VAST_PROGRESS_SITUATION='승인완료'
+	GROUP BY REQ_EMP_EMNO
+	)X
+	</select>
+	
+	<!-- 대시보드 - 오늘의 휴가자  -->
+	<select id="vacTodayEmpList" resultType="HashMap">
+	SELECT
+		V.REQ_EMP_EMNO AS empEmno,
+		E.EMP_NAME AS empName,
+		D.DEPT_NAME AS deptName,
+		IF(V.VAST_START_DATE = V.VAST_END_DATE, CONCAT(LEFT(V.VAST_START_DATE,4),'.', SUBSTRING(V.VAST_START_DATE,5,2),'.', RIGHT(V.VAST_START_DATE,2)), 
+					CONCAT(LEFT(V.VAST_START_DATE,4),'.', SUBSTRING(V.VAST_START_DATE,5,2),'.', RIGHT(V.VAST_START_DATE,2),'~', 
+					LEFT(V.VAST_END_DATE,4),'.', SUBSTRING(V.VAST_END_DATE,5,2),'.', RIGHT(V.VAST_END_DATE,2))) AS vastTerm,
+		IF(V.VAST_C='V1','연차',IF(V.VAST_C='V2','반차','기타휴가')) AS vastC
+	FROM VAC_STATEMENT V
+	INNER JOIN EMPLOYEE E ON V.REQ_EMP_EMNO = E.EMP_EMNO
+	INNER JOIN DEPARTMENT D ON D.DEPT_CODE = E.DEPT_CODE
+	WHERE V.VAST_PROGRESS_SITUATION = '승인완료'
+	AND (REPLACE(LEFT(NOW(),10),'-','') <![CDATA[ >= ]]> V.VAST_START_DATE AND REPLACE(LEFT(NOW(),10),'-','') <![CDATA[ <= ]]> V.VAST_END_DATE)
+	</select>
+	
+</mapper>

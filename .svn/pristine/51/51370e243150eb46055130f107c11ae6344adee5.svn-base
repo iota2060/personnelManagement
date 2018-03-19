@@ -1,0 +1,63 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="Info">
+
+	<insert id="infoInsert" parameterType="HashMap">
+	
+	INSERT INTO employee(	
+		emp_emno,
+		emp_id,
+		emp_pswd,
+		emp_name,
+		emp_ename,
+		emp_bday,
+		emp_tno,
+		emp_inco_date,
+		icty_code,
+		dept_code,
+		rank_code,
+		emp_mits_yn,
+		emp_reg_date,
+		emp_del_yn) 
+
+
+		VALUES (
+			#{empEmno}, 
+			#{empId},  
+			#{empPw},
+			#{empName},
+			#{empEname},
+			#{empBday},
+			#{empTno},
+			#{empIncodate},
+			#{ictyCode},
+			#{deptCode},
+			#{rankCode},
+			#{armyYN},
+			#{empRegDate},
+			'N'
+		)
+			
+			
+			
+	</insert>
+	
+ 	<select id="infoSelect" resultType="HashMap" parameterType="HashMap">
+		
+	
+
+			select * from employee
+
+		
+	
+	</select> 
+	
+	<select id="getEmno" resultType="HashMap" parameterType="HashMap" >
+		
+		select * from employee where emp_emno = #{emno}
+		
+	</select>
+</mapper>
+
+		

@@ -1,0 +1,67 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 출장신청 사원정보조회 -->
+<mapper namespace="holidaySet">
+	<insert id = "holidaySetDBInsert" parameterType="jsonData" >
+		INSERT INTO VACATION(VAST_C, VAST_TYPE, YRYC_REFL_YN, VAST_NOTE)
+		VALUES(#{code}, #{title}, #{AnnualLeaveReflection}, #{note})
+		WHERE NOT EXISTS ( SELECT * FROM VACATION WHERE VAST_C = #{code})
+	</insert>
+	
+	<!-- 연차에 따른 휴가일수 디비 저장 -->
+	<insert id=  "conWorkVacSetDBInsert" parameterType="jsonDataVac" >
+		INSERT INTO 
+			continous_work_year 		#근속연수 공통코드 테이블
+			(COWY_CONTINOUS_TYPE 		#근속항목(연수)
+			,COWY_VAC_DAYS				#휴가일수
+			,COWY_DEL_YN,COWY_NOTE)		#비고
+		VALUES
+			(#{conworkyear}
+			,#{vacofyear}
+			,'N'						#삭제여부
+			,#{note});
+			
+	</insert>
+	
+	<delete id="holidayRosterDelete" parameterType="deleteEventsData">
+		delete from workroster where ID = #{id};
+	</delete>
+	
+	<insert id="holidayRoster" parameterType="HashMap">
+		INSERT INTO
+			holidayRosterSetting
+			(EMPNAME,
+			 YEARMONTH)
+		VALUES
+			(#{empName},
+			 #{yearMonth}
+			);
+	</insert>
+	
+	<select id="holidayRosterList" resultType="HashMap">
+		SELECT * FROM holidayrostersetting
+		order by holidayRosterSettingSerialNumber desc
+		limit 1;
+	</select>
+	
+	<select id="holidayRosterEventsList" resultType="HashMap">
+		SELECT start, end, text, resource, id FROM workroster
+	</select>
+	
+	<insert id = "holidayRosterDBInsert" parameterType="eventsData" >
+		INSERT INTO WORKROSTER(ID, START, END, RESOURCE, TEXT)
+		VALUES(#{id}, #{start}, #{end}, #{resource}, #{text})
+		ON DUPLICATE KEY UPDATE START = #{start}, END = #{end}, RESOURCE = #{resource}, TEXT = #{text}
+	</insert>
+	
+	<!-- 연차에 따른 휴가일수 리스트 불러오기 -->
+	<select id="conWorkVacSetupList" resultType="HashMap">
+		SELECT
+			COWY_CONTINOUS_TYPE as cct 		#근속항목(연수)
+			,COWY_VAC_DAYS	as cvd				#휴가일수
+			,COWY_NOTE as cn 		#비고
+		FROM continous_work_year
+	</select>
+	 
+</mapper>

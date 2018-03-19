@@ -1,0 +1,86 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<script>
+	var emno = "0905000211";
+	var deptCode = 2;
+	var crtfCode = 3;
+	
+	//페이지 로딩시 증명서 전체데이터 가져온다
+	paging.ajaxSubmit("certificateWhole.do","",function(rslt){
+		 console.log("결과데이터 : " + JSON.stringify(rslt));
+		 var tbody = $("#tbodyId");
+		 
+		 $.each(rslt,function(index){
+			 tbody.append("<tr name='trName' data-toggle='modal' data-target='#viewModal' onclick='certificateInfo($(this))'>"+
+			 					"<td name='crtfSeq'>"+rslt[index].crtfSeq+"</td>" +		//발행번호
+			 					"<td name='empEmno'>"+rslt[index].empEmno+"</td>" +		//사원번호
+			 					"<td name='empName'>"+rslt[index].empName+"</td>" +		//성명
+			 					"<td name='commName'>"+rslt[index].commName+"</td>" +	//증명서종류
+			 					//"<td name='crtfUse'>"+rslt[index].crtfUse+"</td>" +		//용도
+			 					"<td name='crtfDate'>"+rslt[index].crtfDate+"</td>" +	//신청일
+			 			  "</tr>");
+		 });
+	});
+	
+	//검색 날짜선택시
+	$("[name='startDate'],[name='endDate']").datetimepicker({ 
+		viewMode : 'days',
+		format : 'YYYY-MM-DD'
+	});
+	
+	//검색버튼 클릭시
+	var search = function(){
+		
+		var tbody = $("#tbodyId");
+		var trName = $("tr[name='trName']");
+		
+		trName.remove();
+		
+		var formId = $("#formId").attr("id");
+		
+		paging.ajaxFormSubmit("certificateSearch.do",formId,function(rslt){
+			console.log("결과데이터 : " + JSON.stringify(rslt));
+			
+			$.each(rslt,function(index){
+				tbody.append("<tr name='trName' data-toggle='modal' data-target='#viewModal' onclick='certificateInfo($(this))'>"+
+	 					"<td name='crtfSeq'>"+rslt[index].crtfSeq+"</td>" +		//발행번호
+	 					"<td name='empEmno'>"+rslt[index].empEmno+"</td>" +		//사원번호
+	 					"<td name='empName'>"+rslt[index].empName+"</td>" +		//성명
+	 					"<td name='commName'>"+rslt[index].commName+"</td>" +	//증명서종류
+	 					"<td name='crtfDate'>"+rslt[index].crtfDate+"</td>" +	//신청일
+	 			  "</tr>");
+			});
+		});
+	}
+	
+	//증명서 상세정보
+	var certificateInfo = function(data){
+		
+		//각 tr의 정보를 가져온다
+		var crtSeq = data.find("td[name='crtfSeq']").text();		//발행번호
+		var empEmno = data.find("td[name='empEmno']").text();		//사원번호
+		var empName = data.find("td[name='empName']").text();		//성명
+		var commName = data.find("td[name='commName']").text();		//증명서종류
+		var crtfUse = data.find("td[name='crtfUse']").text();		//용도
+		var crtfDate = data.find("td[name='crtfDate']").text();		//신청일
+		
+		var formId = $("#viewForm");
+		//viewForm에 데이터를 넣는다
+		formId.find("[name='crtfSeq']").val(crtSeq);
+		formId.find("[name='empEmno']").val(empEmno);
+		formId.find("[name='empName']").val(empName);
+		formId.find("[name='select']").val(commName).prop("selected",true);
+		formId.find("[name='use']").val(crtfUse);
+		formId.find("[name='application']").val(crtfDate);
+		
+		//사원정보가져오기
+		var obj = {};
+		obj.emno = emno;
+		
+		paging.ajaxSubmit("empInfo.do",obj,function(rslt){
+			 $("#viewModal #viewForm input[name='deptName']").val(rslt.deptName); //부서명
+			 $("#viewModal #viewForm input[name='rankName']").val(rslt.rankName); //직위/직급명
+		});
+	}
+	
+</script>

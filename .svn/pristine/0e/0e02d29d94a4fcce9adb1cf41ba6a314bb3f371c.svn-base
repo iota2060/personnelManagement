@@ -1,0 +1,97 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="menuTree">
+	<select id="menuList" resultType="HashMap">
+		SELECT
+			MN_NO mnNo, /*메뉴코드*/
+			MN_NAME mnName, /*메뉴명*/
+			MN_IDX mnIdx, /*메뉴순번*/
+			MN_PRNT_NO mnPrntNo /*상위메뉴코드*/
+		FROM MENU
+		WHERE MN_DEL_YN='N' /*메뉴삭제여부*/
+		ORDER BY MN_PRNT_NO ASC, MN_IDX ASC	
+	</select>
+	
+	<insert id="menuInsert">
+		INSERT INTO MENU 
+			(MN_NAME /*메뉴명*/
+			,MN_PRNT_NO /*상위메뉴코드*/
+			,MN_IDX /*메뉴순번*/
+			,MN_USE_YN /*메뉴사용여부*/
+			,MN_URL /*메뉴url*/
+			,MN_CRT /*메뉴생성날짜*/
+			,MN_UPDT /*메뉴업데이트날짜*/
+			,MN_ATTR /*메뉴속성*/
+			,MN_DEL_YN) /*메뉴삭제여부*/
+		VALUES(#{mnName}
+		,#{mnPrntNo}
+		,#{mnIdx}
+		,#{mnUseYn}
+		,#{mnUrl}
+		,DATE_FORMAT(NOW(),"%x%m%d%h%k%s")
+		,""
+		,#{mnAttr}
+		,"N")	
+	</insert>
+	
+	<select id="menuDetail" parameterType="int" resultType="HashMap">
+		SELECT
+			x.MN_NO mnNo, /*메뉴코드*/
+			x.MN_NAME mnName, /*메뉴이름*/
+			x.MN_IDX mnIdx, /*메뉴순번*/
+			x.MN_URL mnUrl, /*메뉴url*/
+			x.MN_PRNT_NO mnPrntNo, /*상위메뉴코드*/
+			ifnull('',xx.MN_NAME) mnPrntName,
+			x.MN_USE_YN mnUseYn, /*메뉴사용여부*/
+			x.MN_CRT mnCrt, /*메뉴생성날짜*/
+			x.MN_UPDT mnUpdt, /*메뉴업데이트날짜*/
+			x.MN_ATTR mnAttr /*메뉴속성*/
+		FROM MENU x LEFT JOIN MENU xx
+		on x.MN_PRNT_NO = xx.MN_NO
+		WHERE x.MN_NO=#{mnNo} 
+	</select>
+	
+	<update id="menuIndexUpdate" parameterType="HashMap">
+   		UPDATE MENU SET MN_IDX=#{mnIdx} WHERE MN_NO=#{mnNo}
+	</update>
+	
+	<update id="menuUpdate" parameterType="HashMap">
+		UPDATE MENU SET MN_NAME=#{mnName}, /*메뉴명*/
+				MN_URL=#{mnUrl}, /*메뉴url*/
+				MN_USE_YN=#{mnUseYn}, /*메뉴사용여부*/
+				MN_ATTR=#{mnAttr}, /*메뉴속성*/
+				MN_UPDT=DATE_FORMAT(NOW(),"%x%m%d%h%k%s") /*메뉴업데이트날짜*/
+		WHERE MN_NO=#{mnNo}		
+	</update>
+	
+	<update id="menuDelete" parameterType="String">
+		UPDATE MENU SET MN_DEL_YN='Y', /*메뉴사용여부*/
+			MN_UPDT=DATE_FORMAT(NOW(),"%x%m%d%h%k%s") /*메뉴업데이트날짜*/
+		WHERE MN_NO=#{mnNo}	
+	</update>
+		
+<!--test data insert-->	
+	<insert id="menuTest" parameterType="hashMap">
+		INSERT INTO MENU
+			(MN_NAME /*메뉴명*/
+			,MN_PRNT_NO /*상위메뉴코드*/
+			,MN_IDX /*메뉴속성*/
+			,MN_USE_YN /*메뉴사용여부*/
+			,MN_URL /*메뉴url*/
+			,MN_CRT /**/
+			,MN_UPDT /**/
+			,MN_ATTR /**/
+			,MN_DEL_YN) /**/
+		VALUES(#{mnName}
+		,#{mnPrntNo}
+		,0
+		,"Y"
+		,#{mnUrl}
+		,DATE_FORMAT(NOW(),"%x%m%d%h%k%s")
+		,""
+		,#{mnAttr}
+		,"N")	
+	</insert>
+<!--test data insert end-->	
+	
+</mapper>

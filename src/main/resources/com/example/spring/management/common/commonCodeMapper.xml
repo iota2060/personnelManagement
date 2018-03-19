@@ -1,0 +1,201 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="commonCode">
+
+
+	<insert id="commonInsert" parameterType="HashMap" >
+	
+		/* /main/commonMapper.xml - commonInsert(공통코드 등록) */
+		
+		INSERT INTO COMMON
+		(
+		COMM_PRNT_CODE,
+		COMM_NAME,
+		COMM_CODE_INFO,
+		COMM_REG_MN,
+		COMM_CODE_CRT,
+		COMM_CODE_UPDT,
+		COMM_DEL_YN
+		)
+		VALUES
+		(
+		#{commPrntCode},
+		#{commName},
+		#{commCodeInfo},
+		#{commRegMn},
+		#{commCodeCrt},
+		#{commCodeUpdt},
+		#{commDelYn}
+		);
+		
+	</insert>
+	
+	
+	<select id="commonList" parameterType="HashMap" resultType="HashMap">
+		
+		/* /management/common/commonMapper.xml - commonList(공통코드 목록) */
+		
+		SELECT
+			C.COMM_CODE AS commCode,
+			C.COMM_PRNT_CODE AS commPrntCode,
+			C.COMM_NAME AS commName,
+			C.COMM_REG_MN AS commRegMn,
+			C.COMM_CODE_INFO AS commCodeInfo,
+			DATE_FORMAT(C.COMM_CODE_CRT, "%Y-%m-%d") AS commCodeCrt,
+			C.COMM_CODE_UPDT AS commCodeUpdt,
+			C.COMM_DEL_YN AS commDelYn
+		FROM 
+		(
+			SELECT
+				*
+			FROM COMMON
+			WHERE COMM_DEL_YN = 'N'
+			<choose>
+				<when test="commonSearch == null || commonSearch == ''">
+					AND COMM_PRNT_CODE = 0
+				</when>
+				<otherwise>
+					<choose>
+						<when test="commonSelect == 'commCode'">
+							AND COMM_CODE LIKE CONCAT('%',#{commonSearch},'%')
+						</when>
+						<when test="commonSelect == 'commName'">
+							AND COMM_NAME LIKE CONCAT('%',#{commonSearch},'%')
+						</when>
+						<when test="commonSelect == 'commCodeInfo'">
+							AND COMM_CODE_INFO LIKE CONCAT('%',#{commonSearch},'%')
+						</when>
+						<when test="commonSelect == 'commRegMn'">
+							AND COMM_REG_MN LIKE CONCAT('%',#{commonSearch},'%')
+						</when>
+					</choose>
+				</otherwise>
+			</choose>
+		)C
+		ORDER BY C.COMM_CODE DESC
+		LIMIT #{startPost},#{postNum};
+	
+	</select>
+	
+	
+	<update id="commonUpdate" parameterType="HashMap">
+	
+		/* /management/common/commonMapper.xml - commonUpdate(공통코드,하위 공통코드 수정) */
+		
+		UPDATE COMMON
+		SET COMM_NAME = #{commName},
+			COMM_CODE_INFO = #{commCodeInfo}, 
+			COMM_CODE_UPDT = #{commCodeUpdt},
+			COMM_REG_MN = #{commRegMn}
+		WHERE COMM_CODE = #{commCode}
+	
+	</update>
+	
+	
+	<select id="commonDeleteCheck" parameterType="Integer" resultType="HashMap">
+	
+		/* /management/common/commonMapper.xml - commonDeleteCheck(공통코드 삭제여부 확인) */
+		
+		SELECT
+			COMM_CODE
+		FROM COMMON
+		WHERE COMM_PRNT_CODE = #{commCode} AND COMM_DEL_YN = 'N'
+	
+	</select>
+	
+	
+	<update id="commonDelete" parameterType="Integer">
+	
+		/* /management/common/commonMapper.xml - commonDelete(공통코드,하위 공통코드 삭제) */
+		
+		UPDATE COMMON
+		SET
+			COMM_DEL_YN = 'Y'
+		WHERE COMM_CODE = #{commCode}
+	
+	</update>
+	
+	
+	<insert id="commonInfoInsert" parameterType="HashMap">
+	
+		/* /management/common/commonMapper.xml = commonInfoInsert(공통코드 상세 등록) */
+		
+		INSERT INTO COMMON 
+		(
+		COMM_PRNT_CODE,
+		COMM_NAME,
+		COMM_CODE_INFO,
+		COMM_REG_MN,
+		COMM_CODE_CRT,
+		COMM_CODE_UPDT,
+		COMM_DEL_YN
+		)
+		VALUES
+		(
+		#{commPrntCode},
+		#{commName},
+		#{commCodeInfo},
+		#{commRegMn},
+		#{commCodeCrt},
+		#{commCodeUpdt},
+		#{commDelYn}
+		)
+	
+	</insert>
+	
+	
+	<select id="commonInfoList" parameterType="Integer" resultType="HashMap">
+
+		/* /management/common/commonMapper.xml - commonInfoSelect(공통코드 상세목록)*/
+		
+		SELECT
+			COMM_CODE AS commCode,
+			COMM_PRNT_CODE AS commPrntCode,
+			COMM_NAME AS commName,
+			COMM_CODE_INFO AS commCodeInfo,
+			COMM_REG_MN AS commRegMn,
+			DATE_FORMAT(COMM_CODE_CRT, "%Y-%m-%d") AS commCodeCrt,
+			DATE_FORMAT(COMM_CODE_UPDT, "%Y-%m-%d") AS commCodeUpdt
+		FROM
+			COMMON
+		WHERE COMM_PRNT_CODE = #{commPrntCode} AND COMM_DEL_YN = 'N'
+
+	</select>
+	
+	
+	
+	<select id="commAllPostNum" parameterType="HashMap" resultType="Integer">
+	
+		/* /management/common/commonMapper.xml -commAllPostNum(전체 게시물 개수, 검색했을 때의 게시물 개수) */
+		
+		SELECT
+			COUNT(COMM_CODE) AS allPostNum
+		FROM
+			COMMON
+		WHERE COMM_DEL_YN = 'N'
+			<choose>
+				<when test="commonSearch == ''">
+					AND COMM_PRNT_CODE = 0
+				</when>
+				<otherwise>
+					<choose>
+						<when test="commonSelect == 'commCode'">
+							AND COMM_CODE LIKE CONCAT('%',#{commonSearch},'%')
+						</when>
+						<when test="commonSelect == 'commName'">
+							AND COMM_NAME LIKE CONCAT('%',#{commonSearch},'%')
+						</when>
+						<when test="commonSelect == 'commCodeInfo'">
+							AND COMM_CODE_INFO LIKE CONCAT('%',#{commonSearch},'%')
+						</when>
+						<when test="commonSelect == 'commRegMn'">
+							AND COMM_REG_MN LIKE CONCAT('%',#{commonSearch},'%')
+						</when>
+					</choose>
+				</otherwise>
+			</choose>
+	</select>
+	
+</mapper>

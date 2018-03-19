@@ -1,0 +1,52 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="allowance">
+	<select id="allowanceList" parameterType="String" resultType="HashMap">
+		/* /allowance/allowanceMapper.xml - allowanceList ( allowanceList 기본 조회 ) */
+		SELECT	
+		sal_type as salType	/* 비용종류 */
+		,format(scom_hh_cst,0) as scomHhCst	/*주간근무시간당비용*/
+		,format(scom_nh_cst,0) as scomNhCst	/*야간근무시간당비용*/
+		,format(scom_lh_cst,0) as scomLhCst	/*지각*/
+		,format(scom_elh_cst,0) as scomElhCst	/*식대*/
+		,format(semp_cmc,0) as sempCmc	/*차량유지비*/
+		,scom_yymm as scomYymm	/*등록년월*/
+		FROM    personnelmanagement.sal_common		/* sal_common Table */   
+		WHERE sal_type = #{divSal}
+	</select>
+	
+	<insert id="allowanceInsert" parameterType="HashMap" >
+		/* /allowance/allowanceMapper.xml - allowanceInsert (비용등록) */
+		INSERT INTO sal_common           /* sal_common Table */
+			(sal_type	/* 비용종류 */
+			, scom_hh_cst	/*주간근무시간당비용*/
+			, scom_nh_cst	/*야간근무시간당비용*/
+			, scom_lh_cst	/*지각*/
+			, scom_elh_cst	/*식대*/
+			, semp_cmc	/*차량유지비*/
+			, scom_yymm)	/*등록년월*/
+		VALUES(#{divSal}	/*비용종류*/
+		,replace(#{scomHhCst},",","")	/*주간근무시간당비용*/
+		,replace(#{scomNhCst},",","")	/*야간근무시간당비용*/
+		,replace(#{scomLhCst},",","")	/*지각*/
+		,replace(#{scomElhCst},",","")	/*식대*/
+		,replace(#{sempCmc},",","")	/*차량유지비*/
+		,now() )/*등록년월*/
+	</insert>
+	
+	<update id="allowanceUpdate" parameterType="HashMap" >
+		/* /allowance/allowanceMapper.xml - allowanceUpdate (비용등록) */
+		UPDATE sal_common SET           /* sal_common Table */
+			  scom_hh_cst = replace(#{scomHhCst},",","")	/*주간근무시간당비용*/
+			, scom_nh_cst = replace(#{scomNhCst},",","")	/*야간근무시간당비용*/
+			, scom_lh_cst = replace(#{scomLhCst},",","")	/*지각*/
+			, scom_elh_cst = replace(#{scomElhCst},",","")	/*식대*/
+			, semp_cmc = replace(#{sempCmc},",","")	/*차량유지비*/
+			, scom_yymm = now() 	/*등록년월*/
+		where sal_type = #{divSal}	/*비용종류*/
+	</update>
+	
+</mapper>
+

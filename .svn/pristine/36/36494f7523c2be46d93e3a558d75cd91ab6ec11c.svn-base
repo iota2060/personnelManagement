@@ -1,0 +1,119 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+
+<script language="javascript">
+
+	$(document).ready(function(){
+		
+		certificateRequestInfoFunc();
+		//certificateRequestListFunc();
+		
+		
+	});
+	
+	function certificateRequestInfoFunc(){	//증명서 신청정보 뿌리기
+		
+		var url = "/spring/certificateRequestInfo.do";
+		var empEmno = "0905000211";
+		var data = {"empEmno":empEmno};
+		
+		paging.ajaxSubmit(url,data,function(result){
+
+			var thisBody = $("#crtfRequestInfo tbody");
+			thisBody.find("input[name='crtfRequestDate']").val(result.crtfRequestDate);
+			thisBody.find("input[name='empEmno']").val(result.empEmno);
+			thisBody.find("input[name='empName']").val(result.empName);
+			thisBody.find("input[name='rankName']").val(result.rankName);
+			thisBody.find("input[name='deptName']").val(result.deptName);
+			
+		});
+		
+	}//certificateRequestInfoFunc
+	
+	function certificateRequestListFunc(){	//증명서 신청내역 뿌리기
+		
+		var url = "/spring/certificateRequestList.do";
+		var empEmno = "0905000211";
+		var data = {"empEmno":empEmno};
+		
+		paging.ajaxSubmit(url,data,function(result){
+			
+			var thisBody = $("#crtfRequestList table tbody");
+			
+			if(result.length == 0 || result == null){	//증명서 신청내역이 없을경우
+				
+				if(thisBody.find("tr")){
+					
+					thisBody.find("tr").each(function(){
+						$(this).remove();
+					});
+
+				}//if
+				
+			}else{	//증명서 신청내역이 있을경우
+				
+				if(thisBody.find("tr")){
+					
+					thisBody.find("tr").each(function(){
+						$(this).remove();
+					});
+					
+				}//if
+				
+				$.each(result,function(idx){
+				
+					thisBody.append(
+							"<tr>" + 
+								"<td name='crtfSeq'>" + result[idx].crtfSeq + "</td>" + 
+								"<td name='commCode'>" + result[idx].commCode + "</td>" + 
+								"<td name='empEmno'>" + result[idx].empEmno + "</td>" + 
+								"<td name='empName'>" + result[idx].empName + "</td>" + 
+								"<td name='crtfRequestDate'>" + result[idx].crtfRequestDate + "</td>" + 
+								"<td name='crtfIssueDate'>" + result[idx].crtfIssueDate + "</td>" + 
+								"<td name='crtfProgressSituation'>" + result[idx].crtfProgressSituation + "</td>" + 
+								"<td name='crtfUse'>" + result[idx].crtfUse + "</td>" + 
+							"</tr>"
+					);
+				});
+			
+			}//if
+			
+		});
+		
+	}//certificateRequestList
+	
+	
+	$("#crtfRequestBtn").on("click",function(){
+		
+		var crtfSelect = $("#crtfRequest").find("select[name='crtfSelect'] option:selected").val();
+		var crtfUse = $("#crtfRequest input[name='crtfUse']").val();
+		
+		if(crtfSelect == 'default'){
+			alert("증명서를 선택하여 주십시오.");
+			return false;
+		}else if(crtfUse == '' || crtfUse == null){
+			alert("용도를 입력하여 주십시오.");
+			return false;
+		}
+		
+		if(confirm("정말로 신청하시겠습니까?")){
+			alert("신청되었습니다.");
+		}else{
+			return false;
+		}//if
+	});
+
+
+
+
+</script>
+</head>
+<body>
+
+</body>
+</html>

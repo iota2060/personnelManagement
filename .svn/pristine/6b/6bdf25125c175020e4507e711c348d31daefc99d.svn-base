@@ -1,0 +1,83 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="common">
+	<select id="authList" parameterType="String" resultType="HashMap">
+		SELECT
+			authority.MN_NO mnNo /*메뉴코드*/
+		FROM authority 
+		where emp_emno =  #{empEmno} /*사원번호*/
+		and atr_aplystrt<![CDATA[<=]]> now()+0 /*권한사용시작날짜*/
+		and atr_aplyfini<![CDATA[>=]]> now()+0 /*권한사용종료날짜*/
+	</select>
+	<select id="navList" parameterType="java.util.List" resultType="HashMap">
+		select
+			mn_no mnNo,/*메뉴코드*/
+			mn_prnt_no mnPrntNo,/*부모코드*/
+			mn_name mnName, /*메뉴명*/
+			mn_idx mnIdx, /*메뉴순번*/
+			mn_url mnUrl /*메뉴URL*/
+		from menu
+		where menu.MN_DEL_YN='N' /*메뉴삭제여부*/
+		AND menu.MN_USE_YN='Y' /*메뉴사용여부*/
+		<if test="list!=null">
+		AND mn_no in
+			<foreach collection="list" item="item" index="idex" open="(" close=")" separator=",">
+			 	#{item}
+			</foreach>
+		</if>
+		order by mnPrntNo ASC, mnIdx ASC	
+	</select>
+	<select id="navSet" parameterType="HashMap" resultType="HashMap">
+		select 
+			CAST(GREATEST(@r, LEAST(-1,(select @r:= menu.mn_prnt_no from menu where MN_NO=@r))) as unsigned) as mnNo
+		from (select @r<![CDATA[:=]]>#{mnNo}) as x, (select * from menu where mn_no<![CDATA[<]]>#{mnNo}) as xx
+		where @r<![CDATA[<>]]>0
+	</select>
+	<select id="adminNavList" resultType="HashMap">
+		select
+			MN_NO mnNo, /*메뉴코드*/
+			MN_PRNT_NO mnPrntNo, /*부모코드*/
+			MN_NAME mnName, /*메뉴명*/
+			MN_IDX mnIdx, /*메뉴순번*/
+			MN_URL mnUrl /*메뉴URL*/
+		FROM MENU
+		where menu.MN_DEL_YN='N' /*메뉴삭제여부*/
+		AND menu.MN_USE_YN='Y' /*메뉴사용여부*/
+		order by mnPrntNo asc, mnIdx asc	
+	</select>
+	<select id="selectMenu" parameterType="HashMap" resultType="HashMap">
+		SELECT
+			MN_NO mnNo, /*메뉴코드*/
+			MN_PRNT_NO mnPrntNo /*부모코드*/
+		FROM MENU
+		WHERE MN_URL = #{mnUrl}
+		AND MN_DEL_YN='N' /*메뉴삭제여부*/	
+	</select>
+	<select id="loginProcess" parameterType="HashMap" resultType="HashMap">
+		select 
+			emp_emno empEmno, /*사원코드*/
+			emp_admin_yn empAdminYn, /*관리자여부*/
+			emp_id empId /*사원아이디*/
+		from employee
+		where emp_id = #{empId}
+		and emp_pswd = #{empPswd}	
+	</select>
+	<select id="authorityProcess" parameterType="HashMap" resultType="HashMap">
+		select
+			mn_url mnUrl, /*메뉴URL*/
+			atr_attr atrAttr, /*메뉴속성*/
+			atr_updtstrt atrUpdtStrt, /*수정가능시작날짜*/
+			atr_updtfini atrUpdtFini /*수정가능종료날짜*/
+		from authority left join menu
+		on authority.MN_NO = menu.MN_NO
+		where emp_emno =  #{empEmno} /*사원코드*/
+		and atr_aplystrt<![CDATA[<=]]> now()+0 /*권한시작날짜*/
+		and atr_aplyfini<![CDATA[>=]]> now()+0 /*권한종료날짜*/
+	</select>
+	<select id="urlCheck" parameterType="String" resultType="HashMap">
+		select
+			mn_use_yn as mnUseYn
+		from menu
+		where mn_url = #{mnUrl}
+	</select>
+</mapper>

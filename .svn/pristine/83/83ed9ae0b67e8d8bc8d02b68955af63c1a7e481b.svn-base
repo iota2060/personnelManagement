@@ -1,0 +1,109 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 출장신청 사원정보조회 -->
+<mapper namespace="business">
+	<select id="businessRequestEmpList" parameterType="HashMap" resultType="HashMap">
+		/* businessRequest Employee Select (출장신청 사원정보조회) */
+		
+		SELECT
+			(SELECT CASE WHEN RET.RETR_DEL_YN='N' THEN '재직' ELSE '퇴직' END) AS retrDelYn, #퇴직여부
+			E.EMP_EMNO AS empEmno, #사원번호
+			E.EMP_NAME AS empName, #사원명
+			D.DEPT_NAME AS deptName, #부서명
+			R.RANK_NAME AS rankName #직급명
+		FROM EMPLOYEE E
+		INNER JOIN
+			DEPARTMENT D
+		ON D.DEPT_CODE = E.DEPT_CODE
+		INNER JOIN
+			RANK R
+		ON R.RANK_CODE = E.RANK_CODE
+		INNER JOIN
+			RETIREMENT RET
+		ON RET.EMP_EMNO = E.EMP_EMNO
+		<if test='retrDelYn == "off"'> #default
+		WHERE
+			RET.RETR_DEL_YN = 'N'
+		</if>
+		<if test="retrDelYn == 'off' and keyword != null and !keyword.equals('')"> #default
+		AND
+			E.EMP_NAME LIKE CONCAT('%',#{keyword},'%') OR
+			D.DEPT_NAME LIKE CONCAT('%',#{keyword},'%') OR
+			R.RANK_NAME LIKE CONCAT('%',#{keyword},'%')
+		</if>
+		<if test="retrDelYn == 'on' and keyword != null and !keyword.equals('')"> #검색어, 퇴직자 포함
+		WHERE
+			E.EMP_NAME LIKE CONCAT('%',#{keyword},'%') OR
+			D.DEPT_NAME LIKE CONCAT('%',#{keyword},'%') OR
+			R.RANK_NAME LIKE CONCAT('%',#{keyword},'%')
+		</if>
+		<if test="retrDelYn == 'on' and retrKeyword != null and !retrKeyword.equals('')"> #검색어가 재직/퇴직, 퇴직자 포함
+		WHERE
+			RET.RETR_DEL_YN LIKE CONCAT('%',#{retrKeyword},'%')
+		</if>
+		
+	</select>
+
+
+	<!-- 출장신청 -->
+	<insert id="businessRequest" parameterType="HashMap">
+	/* businessRequest Insert (출장신청) */
+	
+	INSERT INTO BT_STM(
+		EMP_EMNO,					  	#사원번호
+		BTST_SERIAL_NUMBER, 	#출장일련번호
+		ATRF_SERIAL_NUMBER, 	#영수증파일일련번호
+		BTST_CRT_DATE, 				#신청일자
+		BTST_BT_START_DATE, 	#출장시작일자
+		BTST_BT_END_DATE, 		#출장종료일자
+		BTST_BT_AREA, 				#출장지역
+		BTST_BT_P, 						#출장목적(장소)
+		BTST_BT_PF, 					#출장비예상
+		BTST_BT_FEE,			  	#출장비실제사용금액
+		BTST_CONT, 						#신청내용
+		BTST_DEL_YN 					#삭제여부
+	) VALUES (
+		#{empEmno}, #사원번호
+		(SELECT CONCAT('BT',(SELECT DATE_FORMAT(NOW(), '%Y%m%d')),'-',(SELECT LPAD((SELECT IFNULL((SELECT COUNT(*) FROM BT_STM a),0)+1), 4, '0')))),
+		null, #영수증파일일련번호(NULL)
+		(SELECT REPLACE(#{btstCrtDate},'-','')), #신청일자
+		(SELECT REPLACE(#{btstBtStartDate},'-','')), #출장시작일자
+		(SELECT REPLACE(#{btstBtEndDate},'-','')), #출장종료일자
+		#{btstBtArea}, #출장지역
+		#{btstBtP}, #출장목적(장소)
+		(SELECT REPLACE(#{btstBtPf},',','')), #출장비예상
+		null, #출장비실제사용금액
+		#{btstCont}, #신청내용
+		'N' #삭제여부
+	)
+	</insert>
+	
+	<!-- 출장정산 -->
+	<select id="businessAdj" parameterType="Hashmap" resultType="Hashmap">
+		SELECT
+			EMP_EMNO 			empEmno 	#사원번호
+			,(SELECT	EMP_NAME empName FROM EMPLOYEE WHERE EMPLOYEE.EMP_EMNO = BT_STM.EMP_EMNO) empName 	#사원이름
+			,BTST_SERIAL_NUMBER bsNumber	#출장일련번호
+			,ATRF_SERIAL_NUMBER asNumber	#영수증파일일련번호
+			,BTST_CRT_DATE 		bcDate		#신청일
+			,BTST_BT_START_DATE bbsDate		#출장시작일자
+			,BTST_BT_END_DATE 	bbeDate		#출장종료일자
+			,BTST_BT_AREA 		bbArea		#출장지역
+			,BTST_BT_P 			bbP			#출장목적(장소)
+			,BTST_BT_PF 		bbPf		#출장비예상
+			,BTST_BT_FEE 		bbFee		#출장비실제사용금액
+			,BTST_CONT 			bCont		#신청내용
+			,BTST_DEL_YN 		bdYn		#삭제여부
+		FROM BT_STM
+		<if test="empEmno !=null and empEmno !='' ">
+			WHERE EMP_EMNO = #{empEmno} 
+		</if>
+		<if test="btstBtStartDate !=null and btstBtStartDate !='' ">
+			AND (SELECT REPLACE(BTST_CRT_DATE,'-','')) BETWEEN (SELECT REPLACE(#{btstBtStartDate},'-','')) AND (SELECT REPLACE(#{btstBtEndDate},'-',''))
+		</if>
+	</select>
+	
+	
+	
+</mapper>

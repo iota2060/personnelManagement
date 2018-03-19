@@ -1,0 +1,62 @@
+package com.example.spring.common.dao;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.session.SqlSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+@Repository("commonDao")
+public class CommonDao {
+	@Autowired
+	private SqlSession sql;
+	private String namespace="common.";
+	
+	public LinkedHashMap<String,Object> navList(String empEmno){
+		
+		List<HashMap<String,Object>> list = this.sql.selectList(namespace+"authList",empEmno);
+		System.out.println("---->>>>>!!!!"+list);
+		
+		
+		List<HashMap<String,Object>> navList  =new ArrayList<HashMap<String,Object>>();
+		LinkedHashMap<String,Object> map = new LinkedHashMap<String,Object>();
+		
+		for(int i=list.size()-1; i>=0; i--) {
+			navList=this.sql.selectList(namespace+"navList",list.get(i).get("mnNo"));
+			System.out.println("---->>>>>!!!!"+navList);
+			for(int j=0; j<navList.size(); j++) {
+				map.put(navList.get(j).get("mnNo")+"",navList.get(j));
+			}
+		}
+		System.out.println("---->>>>>!!!!"+map);
+		return map;
+	}//navList
+	
+	public List<HashMap<String,Object>> adminNavList(){
+		
+		List<HashMap<String,Object>> list = this.sql.selectList(namespace+"adminNavList");
+		return list;
+	}
+	
+	public HashMap<String,Object> selectMenu(HashMap<String,String> map){
+		
+		HashMap<String,Object> mnPrntNo = this.sql.selectOne(namespace+"selectMenu",map);
+		return mnPrntNo;
+	}//selectMenu
+	
+	public HashMap<String,Object> loginProcess(HashMap<String,Object> map){
+		
+		HashMap<String,Object> userMap = this.sql.selectOne(namespace+"loginProcess",map);
+		return userMap;
+	}//loginProcess
+	
+	public List<HashMap<String,Object>> authorityProcess(HashMap<String,Object> map){
+		
+		List<HashMap<String,Object>> userAuthList = this.sql.selectList(namespace+"authorityProcess", map);
+		return userAuthList;
+	}
+}//CommonDao

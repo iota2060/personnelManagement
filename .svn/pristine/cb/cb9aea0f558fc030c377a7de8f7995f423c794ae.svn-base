@@ -1,0 +1,175 @@
+<!--
+	휴가조회(사원) - 유성실,신지연
+ -->
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>휴가조회(사원)</title>
+<style>
+.table > tbody > tr > td { 
+	vertical-align: middle;
+}
+</style>
+<script>
+
+	$(function() {
+	  $("input[type=hidden][name=empEmno]").val("0905000211"); //사원번호 (강병욱으로 테스트중)
+		vacationListSelect(); //사원별 휴가 개수, 휴가신청내역 ajax
+		$('.table tr').children().addClass('text-center'); //테이블 내용 가운데 정렬
+		
+	});
+	
+	//테이블 정렬
+	function tablesorterFunc(){
+		$("#vacStatementTable").tablesorter();
+		$("#vacStatementTable").tablesorter({sortList: [[0,0], [1,0]]});
+	}
+
+	
+	//사원별 휴가 개수, 휴가신청내역 ajax
+	function vacationListSelect(){
+
+		paging.ajaxFormSubmit("vacationListSelect.ajax", "vacListFrm", function(rslt){
+			console.log("결과데이터:"+JSON.stringify(rslt));
+
+			$('#vacStatementTable').children('thead').css('width','calc(100% - 1.1em)'); //테이블 스크롤 css
+
+			if(rslt == null || rslt.success == "N"){
+				$('#vacStatementTbody').append( //리스트가 없을 경우 : 조회된 데이터가 없습니다
+	 				"<div class='text-center'><br><br><br><br>조회할 데이터가 없습니다.</div>"
+	 			);
+			}else if(rslt.success == "Y"){
+	 			$.each(rslt.empRemindingVacList, function(k, v) {
+	 				$('#empEmno').text($("input[type=hidden][name=empEmno]").val());
+	 				$('#empName').text(v.empName);
+	 				$('#baseDate').text(v.baseDate);
+	 				$('#emreVacUd').text(v.emreVacUd);
+	 				$('#emrePvacUd').text(v.emrePvacUd);
+	 				$('#remndrDate').text(v.remndrDate);
+	 			});
+	 			
+	 			var i = 1;
+	 			$.each(rslt.vacationProgressList, function(k, v) {
+					$('#vacStatementTbody').append(
+	 					"<tr style='display:table;width:100%;table-layout:fixed;'>"+
+		 					"<td>"+ i +"</td>"+ //번호
+		 					"<td>"+ v.vastCrtDate +"</td>"+ //신청일
+		 					"<td>"+ v.vastType +"</td>"+ //휴가항목
+		 					"<td>"+ v.vastTerm +"</td>"+ //휴가기간
+		 					"<td>"+ v.vastVacUd +"</td>"+ //일수
+		 					"<td>"+ v.vastProgressSituation +"</td>"+ //결재상황
+		 					"<td>"+ v.vastCont +"</td>"+ //휴가사유
+						"</tr>"
+					);
+					i++; //번호 1 증가
+					if(v.vastProgressSituation == "승인대기"){ //승인대기면 색상 변경
+						$("#vacStatementTbody tr:last").attr("bgcolor","#f0ad4e");
+					}
+	 			});
+			}
+			$('.table tr').children().addClass('text-center'); //테이블 내용 가운데 정렬
+			tablesorterFunc();
+		});
+	}
+	
+	
+/* 	
+	//테이블 마우스오버시 (행을 지날 때), 색 바뀜
+	$(document).ready(function(){
+		$('#vacList tbody tr').mouseover(function(){ 
+			$(this).css("backgroundColor","#f2f2f2"); 
+		}); 
+		$('#vacList tbody tr').mouseout(function(){ 
+			$(this).css("backgroundColor","#fff"); 
+		});
+	});
+*/
+	
+ 
+</script>
+</head>
+<body>
+	<div class="main" style="min-height: 867px;">
+		<div class="main-content">
+			<div class="container-fluid">
+			<h3 class="page-title">휴가조회(사원)</h3>
+				<div class="panel">
+					<div class="panel-body">
+						<form id="vacListFrm">
+							<input type="hidden" name="empEmno">
+						</form>
+						<table class="table table-bordered">	
+							<tr>
+								<th>사원번호</th>
+								<td id="empEmno"></td>
+								<th>성명</th>
+								<td id="empName"></td>
+								<th>연차기간</th>
+								<td id="baseDate"></td> <!-- YYYY.MM.DD ~ YYYY.MM.DD -->
+							</tr>
+							<tr>
+								<th>전체일수</th>
+								<td id="emreVacUd"></td>
+								<th>사용일수</th>
+								<td id="emrePvacUd"></td>
+								<th>잔여일수</th>
+								<td id="remndrDate"></td>
+							</tr>
+						</table>
+					</div>
+				</div>
+				
+				<div class="panel panel-headline"> 
+<!-- 					<div class="panel-heading">  -->
+<!-- 						<h5 class="panel-title">휴가내역</h4> -->
+<!-- 							<p class="subtitle">설명이 필요할 경우 추가 예정</p> -->
+<!-- 					</div> -->
+					<div class="panel-body">
+						<!-- list table 영역 -->
+						<div class="list_wrapper">
+							<table class="table tablesorter" id="vacStatementTable">
+								<thead style="display:table;width:100%;table-layout:fixed;">
+									<tr>
+										<th>번호</th>
+										<th>신청일</th>
+										<th>휴가항목</th>
+										<th>휴가기간</th>
+										<th>일수</th>
+										<th>전자결재상태</th>
+										<th>휴가사유</th>
+									</tr>
+								</thead>
+								<tbody id="vacStatementTbody" style="display:block;height:350px;overflow:auto;">
+<!-- 									<tr bgcolor="#f0ad4e"> -->
+<!-- 										<td>3</td> -->
+<!-- 										<td>2018.01.15</td> -->
+<!-- 										<td>휴가</td> -->
+<!-- 										<td>2018.01.18~2018.01.20</td> -->
+<!-- 										<td>2</td> -->
+<!-- 										<td>승인대기</td> -->
+<!-- 										<td>개인사유</td> -->
+<!-- 									</tr> -->
+								</tbody>
+							</table>
+						</div>
+						<!-- END list table 영역 -->
+						    
+						<!-- 버튼영역 -->
+						<div class="text-center"> <!-- 필수 -->
+							<button type="button" class="btn btn-primary">인쇄하기</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+							<button type="button" class="btn btn-primary">엑셀다운</button>
+						</div>
+						<!-- END 버튼영역 -->
+								
+					</div>
+				</div>
+			</div>
+		<!-- END MAIN CONTENT -->
+		</div>
+	</div>
+	<!-- END MAIN -->
+
+</body>
+</html>

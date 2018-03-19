@@ -1,0 +1,333 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="hrapnt">
+
+	<!-- 발령처리할 사원 리스트 maxcount -->
+	<select id="getListEmpMaxNum" parameterType="HashMap" resultType="int">
+		/* /personnel/hrapnt/hrapntMapper.xml - getListEmpMaxNum( 발령처리할 사원 리스트 maxcount ) */
+		select
+			IFNULL(count(*),0) empMaxNum		
+		from		
+		(select      
+			employee.emp_name emp_name, /*사원이름*/
+			department.dept_name dept_name, /*부서명*/
+			rank.rank_name rank_name /*직급명*/
+		from employee join department   
+		on employee.dept_code = department.dept_code   
+		join rank   
+		on employee.rank_code = rank.rank_code     
+		where employee.emp_del_yn ='N' 
+		<if test="searchCnd !=null and searchCnd !=''">
+			<choose>
+				<when test="searchCnd == 'all'">
+					and dept_name LIKE CONCAT('%',#{searchWd},'%') or rank_name LIKE CONCAT('%',#{searchWd},'%') or emp_name LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'deptName'">
+					and dept_name LIKE CONCAT('%',#{searchWd},'%') 
+				</when>
+				<when test="searchCnd == 'rankName'">
+					and rank_name LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'empName'">
+					and emp_name LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+			</choose>
+		</if>
+		)x
+	</select><!-- 발령처리할 사원 리스트 maxcount -->
+	
+	<!-- 발령처리할 사원 리스트 -->
+	<select id="getListEmp" parameterType="HashMap" resultType="HashMap">
+		/* /personnel/hrapnt/hrapntMapper.xml - getListEmp( 발령처리할 사원 리스트 ) */
+		select
+			x.empEmno, /*사원코드*/
+			x.empName, /*사원명*/
+			rank.rank_name rankName, /*직급명*/
+			x.deptName /*부서명*/
+		from 	
+		(select 
+			emp_emno empEmno, /*사원코드*/
+			emp_name empName, /*사원명*/
+			dept_name deptName, /*부서명*/
+			rank_code rankCode /*직급명*/
+		from employee left join department 
+		on employee.dept_code = department.dept_code
+		where employee.emp_del_yn ='N')x left join rank
+		on x.rankCode = rank.rank_code
+		where 1=1
+		<if test="searchCnd !=null and searchCnd !=''">
+			<choose>
+				<when test="searchCnd == 'all'">
+					and x.deptName LIKE CONCAT('%',#{searchWd},'%') or rank.rank_name LIKE CONCAT('%',#{searchWd},'%') or x.empName LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'deptName'">
+					and x.deptName LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'rankName'">
+					and rankName LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'empName'">
+					and x.empName LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+			</choose>
+		</if>
+		limit #{noticeCount},#{viewNoticeMaxNum}
+	</select><!-- 발령처리할 사원 리스트 -->
+	
+	<!-- 발령 처리 -->
+	<insert id="hrapntRegPro" parameterType="HashMap">
+		/* /personnel/hrapnt/hrapntMapper.xml - hrapntRegPro( 발령 처리 ) */
+		INSERT INTO HRAPNTREG
+			(
+				apnt_empno				/*사원번호*/
+				,apnt_reg_date 			/*발령일자*/
+				,apnt_TYPE_NM 			/*발령구분*/
+				,apnt_CNTN_INFO1 		/*발령내용 data1*/
+				,apnt_CNTN_INFO2 		/*발령내용 data2*/
+				,apnt_RMRK	 			/*비고*/
+			)
+		VALUES
+
+		<if test="empEmno_List != null">
+			<foreach item="item" index="index" collection="empEmno_List" open="" separator="," close="">
+				( #{item,jdbcType=VARCHAR}, NOW(), #{hrApntSel}, #{cntnData1}, #{cntnData2}, #{rmrk} )
+			</foreach>
+		</if>
+		<!-- DATE_FORMAT(now(), '%Y-%m-%d') -->
+	</insert>
+	
+	<!-- 발령 리스트 maxcount -->
+	<select id="getHrapntRsListMaxNum" parameterType="HashMap" resultType="int">
+		/* /personnel/hrapnt/hrapntMapper.xml - getHrapntRsListMaxNum( 발령 리스트 ) */
+		select
+			IFNULL(count(*),0) empMaxNum
+		from (select 
+			s1.APNT_TYPE_NM as apntTypeNm,						/*발령구분*/
+			s1.APNT_REG_DATE as apntRegDate,					/*발령일자*/
+			s1.APNT_EMPNO as apntEmpno,							/*사원번호*/
+			s2.EMPNAME,											/*사원명*/
+			s1.APNT_CNTN_INFO1 as apntCntnInfo1,				/*발령내용 data1*/
+			s1.APNT_CNTN_INFO2 as apntCntnInfo2,				/*발령내용 data2*/
+			s1.APNT_RMRK as apntRmrk,							/*비고*/
+			s2.DEPTNAME	,										/*부서명*/
+			s2.rankName
+		from hrapntreg s1 left join
+    	(select
+			x.empEmno, 											/*사원코드*/
+			x.empName, 											/*사원명*/
+			rank.rank_name rankName, 							/*직급명*/
+			x.deptName 											/*부서명*/
+		from
+		(select
+			emp_emno empEmno, 									/*사원코드*/
+			emp_name empName, 									/*사원명*/
+			dept_name deptName, 								/*부서명*/
+			rank_code rankCode 									/*직급명*/
+		from employee left join department 
+		on employee.dept_code = department.dept_code
+		where employee.emp_del_yn ='N')x left join rank
+		on x.rankCode = rank.rank_code) s2
+	    on s1.apnt_empno = s2.empEmno
+	    where s1.apnt_YN = 'N'
+		
+		<if test="apntTypeNm !=null and apntTypeNm !='' and apntTypeNm !='all'">
+	    	and s1.APNT_TYPE_NM = #{apntTypeNm}
+		</if>
+	    <if test="hrApntDate1 !=null and hrApntDate1 !=''">
+	    	and s1.APNT_REG_DATE between #{hrApntDate1} and #{hrApntDate2}
+		</if>
+	    
+		<if test="searchCnd !=null and searchCnd !=''">
+			<choose>
+				<when test="searchCnd == 'deptName'">
+					and s2.deptName LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'rankName'">
+					and s2.rankName LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'empName'">
+					and s2.empName LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'apntTypeNm'">
+					and s1.APNT_TYPE_NM LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+			</choose>
+		</if>
+		)x
+	</select><!-- 발령 리스트 maxcount -->
+	
+	<!-- 발령 리스트 -->
+	<select id="getHrapntRsList" parameterType="HashMap" resultType="HashMap">
+		/* /personnel/hrapnt/hrapntMapper.xml - getHrapntRsList( 발령 리스트 ) */
+	select 
+		@rownum:=@rownum+1 as hrapntnum, 
+  		s.* 
+    from (select 
+			s1.APNT_TYPE_NM as apntTypeNm,						/*발령구분*/
+			s1.APNT_REG_DATE as apntRegDate,					/*발령일자*/
+			s1.APNT_EMPNO as apntEmpno,							/*사원번호*/
+			s2.EMPNAME,											/*사원명*/
+			s1.APNT_CNTN_INFO1 as apntCntnInfo1,				/*발령내용 data1*/
+			s1.APNT_CNTN_INFO2 as apntCntnInfo2,				/*발령내용 data2*/
+			s1.APNT_RMRK as apntRmrk,							/*비고*/
+			s2.DEPTNAME,										/*부서명*/
+			s2.rankName
+		from hrapntreg s1 left join
+    	(select
+			x.empEmno, 											/*사원코드*/
+			x.empName, 											/*사원명*/
+			rank.rank_name rankName, 							/*직급명*/
+			x.deptName 											/*부서명*/
+		from
+		(select
+			emp_emno empEmno, 									/*사원코드*/
+			emp_name empName, 									/*사원명*/
+			dept_name deptName, 								/*부서명*/
+			rank_code rankCode 									/*직급명*/
+		from employee left join department 
+		on employee.dept_code = department.dept_code
+		where employee.emp_del_yn ='N')x left join rank
+		on x.rankCode = rank.rank_code) s2
+	    on s1.apnt_empno = s2.empEmno
+	    where s1.apnt_YN = 'N'
+	    ) s, (select @rownum:=0) tmp
+	    where 1=1
+	    
+	    
+	    <if test="apntTypeNm !=null and apntTypeNm !='' and apntTypeNm !='all'">
+	    	and s.apntTypeNm = #{apntTypeNm}
+		</if>
+	    <if test="hrApntDate1 !=null and hrApntDate1 !=''">
+	    	and s.apntRegDate between #{hrApntDate1} and #{hrApntDate2}
+		</if>
+	    
+		<if test="searchCnd !=null and searchCnd !=''">
+			<choose>
+				<when test="searchCnd == 'deptName'">
+					and s.deptName LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'rankName'">
+					and s.rankName LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'empName'">
+					and s.empName LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'apntTypeNm'">
+					and s.apntTypeNm LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+			</choose>
+		</if>
+		<!-- limit #{noticeCount},#{viewNoticeMaxNum} -->
+	</select><!-- 발령 리스트 -->
+	
+	
+	
+	
+	
+	<!-- 부서일정가져오기 -->
+	<select id="departmentSchedule" parameterType="HashMap" resultType="HashMap">
+		/* /personnel/hrapnt/hrapntMapper.xml - test( test ) */
+		SELECT 
+			DEPN_TIT AS title											/*제목*/
+			,DATE_FORMAT(DEPN_STRT_DATE,"%Y-%m-%dT%H:%i:%s") AS start	/*시작날짜*/
+			,DATE_FORMAT(DEPN_END_DATE,"%Y-%m-%dT%H:%i:%s") AS end		/*종료날짜*/
+			,'20' as id													/*가상컬럼*/
+		FROM DEPARTMENT_PLAN
+		WHERE DEPT_CODE = #{deptCode}
+			  AND DEPN_DEL_YN = 'N'
+	</select>
+	
+	<!-- 개인일정상세보기 --> 
+	<select id="individuaDetail" parameterType="HashMap" resultType="HashMap">
+		/* /personnel/hrapnt/hrapntMapper.xml - test( test ) */
+		SELECT 
+			INPN_SEQ AS inpnSeq													/*일련번호*/
+			,EMP_EMNO AS empEmno												/*사원번호*/
+			,INPN_TIT AS inpnTit												/*제목*/
+			,INPN_CNTN AS inpnCntn												/*내용*/
+			,DATE_FORMAT(INPN_STRT_DATE,"%Y-%m-%dT%H:%i:%s") AS inpnStrtDate	/*시작날짜*/
+			,DATE_FORMAT(INPN_END_DATE,"%Y-%m-%dT%H:%i:%s") AS inpnEndDate		/*종료날짜*/
+			,INPN_REG_DATE AS inpnRegDate										/*등록날짜*/
+			,INPN_UPDT_DATE AS inpnUpdtDate     								/*수정날짜*/
+			,INPN_DEL_YN AS inpnDelYn 											/*삭제여부*/
+		FROM INDIVIDUAL_PLAN
+		WHERE EMP_EMNO = #{emno}
+			AND INPN_STRT_DATE = #{start}
+			AND INPN_END_DATE = #{end}
+	</select>
+	
+	<!-- 부서일정상세보기 -->
+	<select id="departmentDetail" parameterType="HashMap" resultType="HashMap">
+		/* /personnel/hrapnt/hrapntMapper.xml - test( test ) */
+		SELECT 
+			DEPN_SEQ AS depnSeq													/*일련번호*/
+			,DEPT_CODE AS deptCode												/*부서코드*/
+			,EMP_EMNO AS empEmno												/*사원번호*/
+			,DEPN_TIT AS depnTit												/*제목*/
+			,DEPN_CNTN AS depnCntn												/*내용*/
+			,DATE_FORMAT(DEPN_STRT_DATE,"%Y-%m-%dT%H:%i:%s") AS depnStrtDate	/*시작날짜*/
+			,DATE_FORMAT(DEPN_END_DATE,"%Y-%m-%dT%H:%i:%s") AS depnEndDate		/*종료날짜*/
+			,DEPN_REG_DATE AS depnRegDate										/*등록날짜*/
+			,DEPN_UPDT_DATE AS depnUpdtDate     								/*수정날짜*/
+			,DEPN_DEL_YN AS depnDelYn 											/*삭제여부*/
+		FROM DEPARTMENT_PLAN
+		WHERE DEPN_STRT_DATE = #{start}
+			AND DEPN_END_DATE = #{end}
+	</select>
+	
+	<!-- 개인일정삭제 -->
+	<update id="individuaDelete" parameterType="HashMap">
+		/* /personnel/hrapnt/hrapntMapper.xml - test( test ) */
+		UPDATE 
+			INDIVIDUAL_PLAN 
+		SET 
+			INPN_DEL_YN = "Y"
+			,INPN_UPDT_DATE = DATE_FORMAT(now(),"%Y%m%d%H%i%s")
+		WHERE 
+			INPN_SEQ = #{seq}
+	</update>
+	
+	<!-- 부서일정삭제 -->
+	<update id="departmentDelete" parameterType="HashMap">
+		/* /personnel/hrapnt/hrapntMapper.xml - test( test ) */
+		UPDATE 
+			DEPARTMENT_PLAN 
+		SET 
+			DEPN_DEL_YN = "Y"
+			,DEPN_UPDT_DATE = DATE_FORMAT(now(),"%Y%m%d%H%i%s")
+		WHERE 
+			DEPN_SEQ = #{seq}
+	</update>
+	
+	<!-- 개인일정수정 -->
+	<update id="individuaUpdate" parameterType="HashMap">
+		/* /personnel/hrapnt/hrapntMapper.xml - test( test ) */
+		UPDATE
+			INDIVIDUAL_PLAN
+		SET
+			INPN_TIT = #{title}
+			,INPN_CNTN = #{content}
+			,INPN_STRT_DATE = #{startDate}
+			,INPN_END_DATE = #{endDate}
+			,INPN_UPDT_DATE = DATE_FORMAT(now(),"%Y%m%d%H%i%s")
+		WHERE
+			INPN_SEQ = #{seq}
+	</update>
+	
+	<!-- 부서일정수정 -->
+	<update id="departmentUpdate" parameterType="HashMap">
+		/* /personnel/hrapnt/hrapntMapper.xml - test( test ) */
+		UPDATE
+			DEPARTMENT_PLAN
+		SET
+			DEPN_TIT = #{title}
+			,DEPN_CNTN = #{content}
+			,DEPN_STRT_DATE = #{startDate}
+			,DEPN_END_DATE = #{endDate}
+			,DEPN_UPDT_DATE = DATE_FORMAT(now(),"%Y%m%d%H%i%s")
+		WHERE
+			DEPN_SEQ = #{seq}
+	</update>
+	
+</mapper>

@@ -1,0 +1,178 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="payc">
+
+<!-- 							SELECT								-->
+	<select id="paycList" parameterType="HashMap" resultType="HashMap"> 
+        
+        SELECT *FROM SAL_REGISTER ORDER BY SREG_YYMM DESC;
+           
+    </select>
+    
+    <select id="getEmpemno" parameterType="HashMap" resultType="HashMap">
+		
+		SELECT EMP_EMNO,SEMP_SAL,SEMP_NW_CST,SEMP_BW_CST,SEMP_L_CST,SEMP_EL_CST,SEMP_BNUS,SEMP_TAMT,
+		SEMP_FDEX,SEMP_CMC,SVAC_VAC_CST
+		
+		 FROM SAL_EMPLOYEE
+	
+	</select>
+		
+	<select id="searchEmym" parameterType="HashMap" resultType="HashMap">
+		
+		SELECT SCAL_EMYM FROM SAL_CALCULATION WHERE SCAL_EMYM = #{emym}
+		
+	</select>
+    
+    <select id ="sal_calList" parameterType="HashMap" resultType="HashMap"> 
+    
+    	
+    </select>
+
+<!-- 							 급여대장 조회 목록 								-->
+	<select id = "select_payc" parameterType="HashMap" resultType="HashMap">
+		
+		SELECT SCAL_EMYM, 
+			  E.EMP_EMNO, 
+			  E.EMP_NAME,
+			   format(SCAL_SAL,0) as SCAL_SAL,
+			   format(SCAL_NW_CST,0) as SCAL_NW_CST,
+		       format(SCAL_TAMT,0) as SCAL_TAMT,
+		       format(SCAL_BW_CST,0) as SCAL_BW_CST,
+		       format(SCAL_L_CST,0) as SCAL_L_CST,
+		       format(SCAL_EL_CST,0) as SCAL_EL_CST,
+		       format(SCAL_BNUS,0) as SCAL_BNUS,
+		       format(SCAL_FDEX,0)as SCAL_FDEX,
+		       format(SCAL_CMC,0)as  SCAL_CMC,
+		       format(SRNK_RAMT,0)as SRNK_RAMT,
+		       format(SCAL_VAC_CST,0)as SCAL_VAC_CST,
+		       format(SCAL_ITAX,0)as SCAL_ITAX,
+		 	   format(SCAL_LTAX,0)as SCAL_LTAX,
+		 	   format(SCAL_NPEN,0)as SCAL_NPEN,
+		 	   format(SCAL_HFEE,0)as SCAL_HFEE,
+		 	   format(SCAL_EFEE,0)as SCAL_EFEE,
+		 	   format(SCAL_DAMT,0)as SCAL_DAMT,
+		       format(SCAL_FAMT,0)as SCAL_FAMT,
+		       format(SCAL_AAMT,0)as SCAL_AAMT,
+		       format(SCAL_SAMT,0)as SCAL_SAMT,
+		       format(SCAL_NWH,0)as SCAL_NWH,
+		       format(SCAL_HWH,0)as SCAL_HWH,
+		       format(SCAL_LH,0)as SCAL_LH,
+		       format(SCAL_ELH,0)as SCAL_ELH,
+		       CMIT_YN,
+		       format(SCAL_VADS,0) as SCAL_VADS
+		       
+  		FROM sal_calculation S ,(SELECT EMP_NAME, EMP_EMNO FROM EMPLOYEE) E
+ 		WHERE S.EMP_EMNO = E.EMP_EMNO AND SCAL_YYMM=#{yymm}
+			
+	</select>
+	
+	<!-- 							 소득세 조회 									-->
+	<select id ="getitax" parameterType="HashMap" resultType="HashMap">
+	
+		SELECT * FROM income_tax
+ 		WHERE (sal_min between #{sal_min} and #{sal}) and (sal_max between #{sal} and #{sal_max}) 
+	
+	</select>
+	
+	<select id="getfamilyNum" parameterType="HashMap" resultType="HashMap">
+		SELECT fam_seq
+		from family WHERE emp_emno =#{emp_emno}
+	</select>
+<!--<select id="departmentSearch" parameterType="HashMap" resultType="HashMap">
+
+		SELECT
+			DEPT_CODE as deptCode
+			,DEPT_NAME as deptName
+		FROM DEPARTMENT WHERE DEPT_NAME LIKE CONCAT('%',#{deptName},'%')
+			
+	</select> -->
+<!-- 							INSERT								-->
+	<insert id="makePaycInsert">
+	
+		INSERT INTO SAL_REGISTER
+		(SREG_YYMM
+		,SREG_NAME
+		,SREG_PDAY
+		,SREG_PYYMM
+		,SREG_AAMT)
+		VALUES(#{pyymm},#{paycname},#{payday},#{payyymm},0)
+	
+	</insert>
+	
+	<!-- 전체계산 insert 데이터가없을 시 -->
+	<insert id="acalInsert">		
+		INSERT INTO SAL_CALCULATION(
+		
+					SCAL_EMYM, EMP_EMNO, SCAL_SAL, SCAL_TAMT, SCAL_FDEX, SCAL_CMC,
+					SCAL_NW_CST, SCAL_BW_CST, SCAL_L_CST, SCAL_NPEN, SCAL_HFEE,
+					SCAL_ITAX, SCAL_LTAX, SCAL_EFEE, SCAL_AAMT, SCAL_DAMT, SCAL_FAMT, SCAL_YYMM)
+     	VALUES (	
+     		
+     	 #{emym},
+     	 #{emp_emno},
+     	 #{sal}, 
+     	 #{tamt},
+     	 #{fdex},
+     	 #{cmc},
+     	 
+     	 #{snc},
+     	 #{sbc},
+     	 #{slc},
+     	 #{npen},
+     	 #{hfee},
+     	 
+     	 #{itax},
+     	 #{ltax},
+     	 #{efee},
+     	 #{aamt},
+     	 #{damt},
+     	 #{famt},
+    	 #{yymm}
+    	
+     	)
+	</insert>
+	
+	
+	<!-- 전체계산 update 데이터가 존재할 시 -->
+	<update id="acalUpdate">	    
+		UPDATE SAL_CALCULATION
+		SET 
+					
+			SCAL_SAL = 	(SELECT SEMP_SAL
+						FROM SAL_EMPLOYEE S, EMPLOYEE E
+						WHERE S.EMP_EMNO = E.EMP_EMNO AND S.EMP_EMNO =#{emp_emno}),	
+						
+			SCAL_FDEX = (SELECT SEMP_FDEX
+						FROM SAL_EMPLOYEE S, EMPLOYEE E
+						WHERE S.EMP_EMNO = E.EMP_EMNO AND S.EMP_EMNO =#{emp_emno}),
+			
+			SCAL_TAMT = #{tamt},
+			SCAL_FDEX = #{fdex},
+			SCAL_NW_CST = #{snc},
+			SCAL_BW_CST = #{sbc},
+			SCAL_L_CST = #{slc},
+			SCAL_CMC = #{cmc},
+			
+			SCAL_NPEN = #{npen},
+			SCAL_HFEE = #{hfee},
+		 	SCAL_ITAX = #{itax},
+		 	SCAL_LTAX = #{ltax},
+		 	SCAL_EFEE = #{efee},
+		 	SCAL_AAMT = #{aamt},
+		 	SCAL_DAMT = #{damt},
+		 	SCAL_FAMT = #{famt}
+			WHERE SCAL_EMYM = #{emym};
+	
+	</update>
+	
+	<update id="payc_main_aamt">
+		UPDATE SAL_register SET SREG_AAMT = format(#{totalaamt},0)
+		WHERE SREG_YYMM=#{yymm}
+	</update> 
+
+	
+	
+</mapper>

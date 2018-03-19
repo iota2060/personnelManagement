@@ -1,0 +1,351 @@
+<!-- 
+	대시보드
+ -->
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>휴가관리</title>
+<style>
+.table > tbody > tr > td { 
+	vertical-align: middle;
+}
+.table > tbody > tr > th { 
+	vertical-align: middle;
+}
+</style>
+<script type="text/javascript" src="https://www.amcharts.com/lib/3/amcharts.js"></script>
+<script type="text/javascript" src="https://www.amcharts.com/lib/3/serial.js"></script>
+<script type="text/javascript" src="https://www.amcharts.com/lib/3/pie.js"></script>
+<script type="text/javascript" src="https://www.amcharts.com/lib/3/themes/light.js"></script>
+<script>
+	
+	//document ready
+	$(function(){
+		$('input[name=empEmno]').val('0905000411'); //강병욱으로 테스트
+		$('input[name=baseMonth]').val(moment().format('YYYYMM')); //YYYYMM
+		$('#monthlyChartTitle').html('연차 사용현황 ('+$('input[name=baseMonth]').val().substr(0,4)+')');
+		printClock();
+		empVacInfo(); //사원휴가정보
+		monthlyVacChart(); //월별 휴가사용개수 그래프 + ajax
+		vacTodayEmpList(); //오늘의 휴가자 ajax
+		tablesorterFunc(); //테이블 정렬
+	});
+	
+	function printClock() { // 	출처: http:'//bbaksae.tistory.com/23 [QRD]
+	    
+	    var clock = document.getElementById("clock");            // 출력할 장소 선택
+	    var currentDate = new Date();                                     // 현재시간
+	    var calendar = currentDate.getFullYear() + "-" + (currentDate.getMonth()+1) + "-" + currentDate.getDate() // 현재 날짜
+	    var amPm = 'AM'; // 초기값 AM
+	    var currentYear = currentDate.getFullYear();
+	    var currentMonth = currentDate.getMonth();
+	    var currentdate = currentDate.getDate();
+	    var currentHours = addZeros(currentDate.getHours(),2); 
+	    var currentMinute = addZeros(currentDate.getMinutes() ,2);
+	    var currentSeconds =  addZeros(currentDate.getSeconds(),2);
+	    
+	    if(currentHours >= 12){ // 시간이 12보다 클 때 PM으로 세팅, 12를 빼줌
+	    	amPm = 'PM';
+	    	currentHours = addZeros(currentHours - 12,2);
+	    }
+
+	    if(currentSeconds >= 50){// 50초 이상일 때 색을 변환해 준다.
+	       currentSeconds = '<span style="color:#de1951;">'+currentSeconds+'</span>'
+	    }
+	    clock.innerHTML = currentYear+"."+currentMonth+"."+currentdate+"  "+currentHours+":"+currentMinute+":"+currentSeconds +" <span class='panel-subtitle'>"+ amPm+"</span>"; //날짜를 출력해 줌
+	    
+	    setTimeout("printClock()",1000);         // 1초마다 printClock() 함수 호출
+	}
+
+	function addZeros(num, digit) { // 자릿수 맞춰주기
+		  var zero = '';
+		  num = num.toString();
+		  if (num.length < digit) {
+		    for (i = 0; i < digit - num.length; i++) {
+		      zero += '0';
+		    }
+		  }
+		  return zero + num;
+	}
+
+	function empVacInfo(){
+		paging.ajaxFormSubmit("empVacInfo.ajax", "frm", function(rslt){
+			console.log("결과데이터:"+JSON.stringify(rslt));
+
+	 		$.each(rslt.empVacInfo, function(k, v) {
+	 			$('#empName').html(v.empName+'님 환영합니다!');
+	 			$('#empEmno').html($('input[name=empEmno]').val()); //사원번호
+	 			$('#empIncoDate').html(v.empIncoDate); //입사일
+	 			$('#deptName').html(v.deptName); //부서명
+	 			$('#rankName').html(v.rankName); //직위명
+	 			$('#empBday').html(v.empBday); //생년월일
+	 			$('#empTno').html(v.empTno); //전화번호
+	 			$('#empEmail').html(v.empEmail); //이메일주소
+	 			$('#emreVacUd').html(v.emreVacUd); //연차일수
+	 			$('#emrePvacUd').html(v.emrePvacUd); //사용일수
+	 			$('#emreRemndrUd').html(v.emreRemndrUd); //잔여일수
+	 			$('#emreUpvacUd').html(v.emreUpvacUd); //기타휴가사용일수
+	 		});
+	 		
+	 		$('#empInfoTable').css('height','210px'); //테이블 높이
+			$('#empInfoTable th').css('width','150px');
+			$('#empInfoTable td').css('width','150px');
+			$('#empInfoTable tr').children().addClass('text-center'); //테이블 내용 가운데 정렬
+		});
+	}
+	
+	//월별 휴가사용개수 그래프 ajax
+	function monthlyVacChart(){
+		paging.ajaxFormSubmit("monthlyVacChart.ajax", "frm", function(rslt){
+			console.log("결과데이터:"+JSON.stringify(rslt.monthlyVacChart));
+			
+			AmCharts.makeChart("Monthlychartdiv",{
+				"type": "serial",
+				"categoryField": "date",
+				"dataDateFormat": "YYYYMM",
+				"plotAreaBorderColor": "#666666",
+				"borderColor": "#666666",
+				"color": "#666666",
+				"theme": "light",
+				"categoryAxis": {
+					"minPeriod": "MM",
+					"parseDates": true
+				},
+				"chartCursor": {
+					"enabled": true,
+					"categoryBalloonDateFormat": "MMM YYYY",
+					"cursorColor": "#666666"
+				},
+				"trendLines": [],
+				"graphs": [
+					{
+						"fillAlphas": 0.7,
+						"id": "allData",
+						"lineAlpha": 0,
+						"title": "전체 사원의 평균 연차 사용일",
+						"valueField": "allData"
+					},
+					{
+						"fillAlphas": 0.7,
+						"id": "userData",
+						"lineAlpha": 0,
+						"title": "나의 연차 사용일",
+						"valueField": "userData"
+					}
+				],
+				"guides": [],
+				"valueAxes": [
+					{
+						"dashLength": 2,
+						"totalTextColor": "#666666",
+						"color": "#666666",
+						"gridColor": "#666666"
+					}
+				],
+				"allLabels": [],
+				"balloon": {},
+				"legend": {
+					"enabled": true,
+					"align": "center"
+				},
+				"dataProvider": JSON.parse(JSON.stringify(rslt.monthlyVacChart))
+			});
+		});
+	}
+		
+	//테이블 정렬
+	function tablesorterFunc(){
+		$("#vacTable").tablesorter();
+		$("#vacTable").tablesorter({sortList: [[0,0], [1,0]]});
+	}
+	
+	//오늘의 휴가자
+	function vacTodayEmpList(){
+		paging.ajaxSubmit("vacTodayEmpList.ajax", "", function(rslt){
+			console.log("결과데이터:"+JSON.stringify(rslt));
+			
+// 			$('#vacTable').children('thead').css('width','calc(100% - 1.1em)'); //테이블 스크롤 css
+
+			if(rslt == null || rslt.success == "N"){
+				$('#vacTable').children('tbody').append( //리스트가 없을 경우 : 조회된 데이터가 없습니다
+	 				"<div class='text-center'><br><br><br>휴가자가 없습니다.</div>"
+	 			);
+			}else if(rslt.success == "Y"){
+	 			$.each(rslt.vacTodayEmpList, function(k, v) {
+	 				$('#vacTable').children('tbody').append(
+						"<tr style='display:table;width:100%;table-layout:fixed;cursor:pointer;'>"+
+			 				"<td>"+ v.empEmno +"</td>"+ //사원번호
+			 				"<td>"+ v.empName +"</td>"+ //성명
+			 				"<td>"+ v.deptName +"</td>"+ //부서
+			 				"<td>"+ v.vastTerm +"</td>"+ //휴가기간
+						"</tr>"
+					);
+	 				
+	 				//연차 primary 반차 success 기타휴가 warning
+	 				if(v.vastC == '연차'){ //연차
+	 					$('#vacTable > tbody > tr:last').append(
+	 						"<td><span class='label label-primary'>"+v.vastC+"</span></td>"
+	 					);
+	 				}else if(v.vastC == '반차'){ //반차
+	 					$('#vacTable > tbody > tr:last').append(
+		 					"<td><span class='label label-success'>"+v.vastC+"</span></td>"
+		 				);
+	 				}else if(v.vastC == '기타휴가'){ //기타휴가
+	 					$('#vacTable > tbody > tr:last').append(
+		 					"<td><span class='label label-warning'>"+v.vastC+"</span></td>"
+		 				);
+	 				}
+	 			});
+			}
+			$('#vacTable tr').children().addClass('text-center'); //테이블 내용 가운데 정렬
+		});
+	}
+	
+</script>
+</head>
+<body>
+	<div class="main" style="min-height: 867px;">
+		<div class="main-content">
+			<div class="container-fluid">
+				<form id="frm">
+					<input type="hidden" name="empEmno"><!-- 사원번호 -->
+					<input type="hidden" name="baseMonth"><!-- 시스템년월(YYYYMM) -->
+				</form>
+				
+				<div class="row">
+					<div class="col-md-7"><!-- START box1 -->
+						<div class="panel panel-headline">
+							<div class="panel-heading">
+								<h3 class="panel-title" id="empName"></h3>
+								<p class="panel-subtitle" id="clock"></p>
+							</div>
+							<div class="panel-body">
+								<table class="table table-bordered table-striped" id="empInfoTable">
+									<tbody>
+										<tr>
+											<th>사원번호</th>
+											<td id="empEmno"></td>
+											<th>입사일</th>
+											<td id="empIncoDate"></td>
+										</tr>
+										<tr>
+											<th>부서명</th>
+											<td id="deptName"></td>
+											<th>직위명</th>
+											<td id="rankName"></td>
+										</tr>
+										<tr>
+											<th>생년월일</th>
+											<td id="empBday"></td>
+											<th>전화번호</th>
+											<td id="empTno"></td>
+										</tr>
+										<tr>
+											<th>이메일주소</th>
+											<td colspan="3" id="empEmail"></td>									
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div><!-- END box1 -->
+			
+				<div class="col-md-5"><!-- START box2 -->
+					<div class="panel">
+						<div class="panel-heading">
+							<h3 class="panel-title">회사 일정</h3>
+						</div>
+						<div class="panel-body" style="position:relative; top:-25px">
+							<ul class="list-unstyled activity-list">
+								<li>
+									<p>
+										<span class="title">Restart Server</span>
+										<span class="short-description">Dynamically integrate client-centric technologies without cooperative resources.</span>
+										<span class="date">Oct 9, 2016</span>
+									</p>
+								</li>
+								<li>
+									<p>
+										<span class="title">Retest Upload Scenario</span>
+										<span class="short-description">Compellingly implement clicks-and-mortar relationships without highly efficient metrics.</span>
+										<span class="date">Oct 23, 2016</span>
+									</p>
+								</li>
+								<li>
+									<p>
+										<strong>Functional Spec Meeting</strong>
+										<span class="short-description">Monotonectally formulate client-focused core competencies after parallel web-readiness.</span>
+										<span class="date">Oct 11, 2016</span>
+									</p>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				
+				
+				
+
+				<div class="row">
+					<div class="col-md-6"><!-- START box3 -->
+						<div class="panel">
+							<div class="panel-heading">
+								<h3 class="panel-title">오늘의 휴가자</h3>
+							</div>
+							<div class="panel-body no-padding">
+								<table class="table table-striped tablesorter" id="vacTable">
+									<thead style="display:table;width:100%;table-layout:fixed;">
+										<tr>
+											<th>사원번호</th>
+											<th>성명</th>
+											<th>부서</th>
+											<th>휴가기간</th>
+											<th>휴가구분</th>
+										</tr>
+									</thead>
+									<tbody id="vacTbody" style="display:block;height:255px;overflow:auto;">
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div><!-- END box3 -->					
+					
+					<div class="col-md-6"><!-- START box4 -->
+						<div class="panel">
+							<div class="panel-heading" style="margin-bottom: -20px;">
+								<h3 class="panel-title" id="monthlyChartTitle"></h3>
+							</div>
+							<div class="panel-body">
+								<div class="row">
+									<div class="col-md-10" style="margin:0%">
+										<div id="Monthlychartdiv" style="width: 100%; height: 350px; background-color: #FFFFFF;" ></div>	
+									</div>
+									<div class="col-md-2" style="padding-top:5px; padding-right:30px">
+										<div class="weekly-summary text-right" style="width:110%;">
+											<span class="number" id="emreVacUd" style="font-weight:450"></span>
+<!-- 											<span class="percentage"><i class="fa fa-caret-up text-success"></i> 12%</span> -->
+											<span class="info-label">연차일수</span>
+										</div>
+										<div class="weekly-summary text-right" style="width:110%">
+											<span class="number" id="emrePvacUd" style="font-weight:450"></span> 
+<!-- 											<span class="percentage"><i class="fa fa-caret-up text-success"></i> 23%</span> -->
+											<span class="info-label">사용일수</span>
+										</div>
+										<div class="weekly-summary text-right" style="width:110%">
+											<span class="number" id="emreRemndrUd" style="font-weight:450"></span> 
+<!-- 											<span class="percentage"><i class="fa fa-caret-down text-danger"></i>28%</span> -->
+											<span class="info-label">잔여일수</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div><!-- END box4 -->
+				</div><!-- End row(box3,box4) -->
+			</div><!-- END container fluid -->
+		</div><!-- END main content -->
+	</div><!-- END main -->
+</body>
+</html>

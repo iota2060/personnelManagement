@@ -1,0 +1,74 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<!-- Main -->
+	<div class="main">
+		<!-- Main Content -->
+		<div class="main-content">
+			<div class="container-fluid">
+				<h3 class="page-title">증명서 발급</h3>
+				<!-- OverView -->
+				<div class="row">
+					<div class="col-md-10">
+						<div class="panel panel-headline">
+							<div class="panel-heading">
+								<h4 class="panel-title" style="font-size:20px; padding-left:15px;">증명서 신청</h4>
+							</div>
+							<div class="panel-body">
+								<table class="table">
+									<tbody>
+										<tr>
+											<th>신청번호</th>
+											<td><input type="text" name="crtf_seq" class="form-control" style="width:120px" readOnly></td>
+											<th>증명서 구분</th>
+											<td>
+												<select name="comm_code" class="form-control" style="width:120px">
+													<option value="default">선택</option>
+													<option value="">재직증명서</option>
+													<option value="">경력증명서</option>
+													<option value="">퇴직증명서</option>
+												</select>
+											</td>
+											<th>신청일자</th>
+											<td>
+												<div class="input-group" style="max-width:160px">
+													<input type="text" class="form-control">
+													<span class="input-group-addon">
+														<i class="fa fa-calendar"></i>
+													</span>
+												</div>
+											</td>
+										</tr>
+										<tr>
+											<th>사원번호</th>
+											<td><input type="text" class="form-control" style="width:120px"></td>
+											<th>성명</th>
+											<td><input type="text" class="form-control" style="width:120px"></td>
+											<th>발행일자</th>
+											<td><input type="text" class="form-control" style="width:120px"></td>
+										</tr>
+										<tr>
+											<th>부서</th>
+											<td><input type="text" class="form-control" style="width:120px"></td>
+											<th>직급</th>
+											<td><input type="text" class="form-control" style="width:120px"></td>
+											<th>전자결제상태</th>
+											<td><input type="text" class="form-control" style="width:120px"></td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div><!-- container-fluid -->
+		</div><!-- Main Content -->
+	</div><!-- Main -->
+</body>
+</html>

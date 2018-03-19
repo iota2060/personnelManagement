@@ -1,0 +1,933 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="attend">
+	<!-- ************************************************************************************
+	 * 메뉴명 : [출결관리] - [일일근태등록]
+	 * 개요    : 
+	 * @Author : 이용선
+	 * @Date   : 2018.02.06
+	 ************************************************************************************ -->
+	
+	<!-- 출근버튼 -->
+	<!-- INSERT ==============================================================-->
+	<insert id="insertDailAttReg" parameterType="HashMap" >
+	
+		INSERT INTO COMM_STM ( 
+			  EMP_EMNO				#사원번호 
+			, ATTENDANCE_C			#근태코드 
+			, SHWK_SHF_C			#교대코드 
+			, COST_WRK_IN			#출근시간
+			, COST_DEL_YN 			#삭제여부 
+			)
+		VALUES('0905000211', 'W1', 'A1', REPLACE(NOW()+0, ',', ''), 'N'); 
+	
+	</insert>
+	
+	<!-- 출근 / 퇴근 / 검색 버튼 출력 조회  -->
+	<!-- Select ==============================================================-->
+	<select id="selectInDailAttReg" parameterType="HashMap"  resultType="HashMap">
+	
+ 		  SELECT 
+				C.EMP_EMNO 					As empEmno			#사원번호 
+				,E.EMP_NAME					As empName 			#사원이름
+				,C.COST_WRK_IN 				As wrkIn			#출근시간
+				,C.COST_WRK_OUT			    AS wrkOut			#퇴근시간
+				,C.COST_WRK_TIME		    AS wrkTm			#근무시간
+			FROM COMM_STM C	 
+ LEFT OUTER JOIN EMPLOYEE E 
+			  ON C.EMP_EMNO = E.EMP_EMNO
+		WHERE 1=1
+			  <if test= "attendedDate != null and attendedDate != ''">
+			 AND SUBSTRING(C.COST_WRK_IN, 1, 8) = #{attendedDate} 
+			  </if>
+		ORDER BY COST_WRK_IN DESC LIMIT 1
+
+	</select>
+	<!-- ===================================================================== -->
+	
+	<!-- 퇴근버튼 -->
+	<!-- UPDATE ==============================================================-->
+	<update id="updateDailAttReg" parameterType="HashMap" >
+	
+		UPDATE COMM_STM
+   			SET COST_WRK_OUT = REPLACE(NOW()+0, ',', ''),			#퇴근시간
+   				COST_WRK_TIME = TIMEDIFF(							#근무시간
+   				DATE_FORMAT(COST_WRK_OUT, '%Y%m%d%H%i%s'), 			
+   				DATE_FORMAT(COST_WRK_IN, '%Y%m%d%H%i%s'))
+			WHERE 1=1
+ 			  AND COST_SERIAL_NUMBER = (SELECT LAST_NUM
+			 FROM (SELECT MAX(CS.COST_SERIAL_NUMBER) AS LAST_NUM
+ 			 FROM COMM_STM CS
+			WHERE 1=1
+				  AND CS.COST_WRK_IN > CURDATE() 
+				  OR CS.COST_WRK_IN > CURDATE() - INTERVAL 1 DAY
+				  ORDER BY CS.COST_WRK_IN DESC LIMIT 2 )TMP
+			);
+			
+	</update>
+	
+	<!-- ************************************************************************************
+	 * 메뉴명 : [출결관리] - [월간 근태 생성/마감]
+	 * 개요    : 
+	 * @Author : 제영호
+	 * @Date   : 2018.01.??
+	 ************************************************************************************ -->
+	<!-- attend.readMnthngAttdCrtClsCnt -->
+	<select id="readMnthngAttdCrtClsCnt" parameterType="HashMap" resultType="int">
+		SELECT IFNULL(COUNT(*), 0) 			AS totalCnt /*월근태사원총개수*/
+		  FROM (SELECT DISTINCT 
+					   E.EMP_EMNO  						
+				  FROM COMM_STM C
+	   LEFT OUTER JOIN EMPLOYEE E
+			        ON C.EMP_EMNO = E.EMP_EMNO   
+				 WHERE 1=1
+				  <if test="workYyMm != null and workYyMm != ''">
+		   			AND SUBSTRING(C.COST_WRK_IN, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+		 		 </if>
+		 ) M
+	</select>
+	 
+	<!-- attend.readMnthngAttdCrtCls -->
+	<select id="readMnthngAttdCrtCls" parameterType="HashMap" resultType="HashMap">
+			SELECT DISTINCT 
+				   E.EMP_EMNO  		   AS empEmno 	/*사원번호*/
+			     , E.EMP_NAME  		   AS empName	/*사원이름*/	
+			     , E.RANK_CODE 		   AS rankCode	/*직위/직급코드*/		
+			     , E.DEPT_CODE 		   AS depCode  /*부서코드*/
+			     , E.EMP_ANL		   AS empAnl   /*연차*/
+			  FROM COMM_STM C
+   LEFT OUTER JOIN EMPLOYEE E
+		        ON C.EMP_EMNO = E.EMP_EMNO   
+			 WHERE 1=1
+			 <if test="workYyMm != null and workYyMm != ''">
+			   AND SUBSTRING(C.COST_WRK_IN, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+			 </if>
+			 <if test="noticeOffset != null">
+			 	<if test="viewNoticeMaxNum != null">
+			 		LIMIT #{noticeOffset}, #{viewNoticeMaxNum} 
+			 	</if>
+			 </if>
+	</select>
+	
+	<!-- attend.readMnthngAttdCrtClsStts -->
+	<select id="readMnthngAttdCrtClsStts" parameterType="HashMap" resultType="HashMap">
+			SELECT M.EMP_EMNO				AS empEmno	    		/*사원번호*/
+		         , M.TOT_WORKDAY_CNT    	AS totWorkdayCnt   		/*총근무일수*/
+				 , M.WK_WORKDAY_CNT     	AS wkWorkdayCnt    		/*평일근무일수*/
+				 , M.HOLI_WORKDAY_CNT   	AS hoilWorkdayCnt  		/*휴일근무일수*/
+				 , M.VAC_USEDAY_CNT      	AS vacUsedayCnt    		/*휴가사용일수*/
+				 , M.ETC_USEDAY_CNT      	AS etcUsedayCnt    		/*기타사용일수*/
+				 , M.ABSENC_CNT				AS absencCnt			/*결근일수*/
+				 , M.WK_EXT_WORK_TIME    	AS wkExtWorkTime        /*평일연장근무시간*/
+				 , M.WK_NIGHT_WORK_TIME  	AS wkNightWorkTime      /*평일야간근무시간*/
+				 , M.HOLI_WORK_TIME      	AS holiWorkTime			/*휴일무시간*/
+				 , M.HOLI_EXT_WORK_TIME  	AS holiExtWorkTime      /*휴일연장근무시간*/
+				 , M.HOLI_NIGHT_WORK_TIME	AS holiNightWorkTime    /*휴일야간근무시간*/
+				 , M.LATE_TIME           	AS lateTime				/*지각*/
+				 , M.EARLY_LEAVE_TIME    	AS earlyLeaveTime		/*조퇴*/
+		      FROM (SELECT EMP_EMNO					   AS EMP_EMNO
+		      			 , SUM(S.TOT_WORKDAY_CNT)      AS TOT_WORKDAY_CNT  
+		      			 , SUM(S.WK_WORKDAY_CNT)       AS WK_WORKDAY_CNT   
+		      			 , SUM(S.HOLI_WORKDAY_CNT)     AS HOLI_WORKDAY_CNT 
+		      			 , SUM(S.VAC_USEDAY_CNT)       AS VAC_USEDAY_CNT   
+		      			 , SUM(S.ETC_USEDAY_CNT)   	   AS ETC_USEDAY_CNT 
+		      			 , SUM(S.ABSENC_CNT)		   AS ABSENC_CNT
+		      			 , SUM(S.WK_EXT_WORK_TIME) 	   AS WK_EXT_WORK_TIME      
+		      			 , SUM(S.WK_NIGHT_WORK_TIME)   AS WK_NIGHT_WORK_TIME    
+		      			 , SUM(S.HOLI_WORK_TIME) 	   AS HOLI_WORK_TIME        
+		      			 , SUM(S.HOLI_EXT_WORK_TIME)   AS HOLI_EXT_WORK_TIME    
+		      			 , SUM(S.HOLI_NIGHT_WORK_TIME) AS HOLI_NIGHT_WORK_TIME  
+		      			 , SUM(S.LATE_TIME) 		   AS LATE_TIME             
+		      			 , SUM(S.EARLY_LEAVE_TIME) 	   AS EARLY_LEAVE_TIME      
+		      	      FROM (    SELECT EMP_EMNO			   AS EMP_EMNO 		   -- 총근무일수 계산
+		      	      				 , COUNT(*)            AS TOT_WORKDAY_CNT  
+				      			     , 0 		           AS WK_WORKDAY_CNT
+				      			     , 0 		           AS HOLI_WORKDAY_CNT
+				      			     , 0 		           AS VAC_USEDAY_CNT
+				      			     , 0 		           AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      	      GROUP BY EMP_EMNO
+				      	  UNION ALL										   
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO  	  	-- 평일근무일수 계산
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , COUNT(*) 	       AS WK_WORKDAY_CNT
+				      			     , 0 			       AS HOLI_WORKDAY_CNT
+				      			     , 0 			       AS VAC_USEDAY_CNT
+				      			     , 0 			       AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS WEEKDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   -- AND (HOLIDAY_FLAG = 'F' AND WEEKEND_FLAG = 'F'))
+																		   AND WEEKEND_FLAG = 'F')
+							  GROUP BY EMP_EMNO
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO		 	-- 휴일근무일수 계산
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , COUNT(*) 		   AS HOLI_WORKDAY_CNT
+				      			     , 0 			       AS VAC_USEDAY_CNT
+				      			     , 0 			       AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS HOLIDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   -- AND (HOLIDAY_FLAG = 'T' OR WEEKEND_FLAG = 'T'))
+																		   AND WEEKEND_FLAG = 'T')
+							  GROUP BY EMP_EMNO
+				      	  UNION ALL
+				      		 	SELECT C.EMP_EMNO		   AS EMP_EMNO		 	-- 휴가 사용일수, 기타휴가일수 계산
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , SUM(V.EMRE_PVAC_UD)   AS VAC_USEDAY_CNT
+				      			     , SUM(V.EMRE_UPVAC_UD)  AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM C
+				       LEFT OUTER JOIN EMPLOYEE_REMINDING_VAC V
+		        				    ON C.EMP_EMNO = V.EMP_EMNO  
+				      			 WHERE 1=1
+				      		  GROUP BY C.EMP_EMNO
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO		 	-- 결근일수
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0                   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      		  GROUP BY EMP_EMNO
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO			-- 평일연장근무시간 
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '30'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   -- AND ATTENDANCE_C = 'W4'
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS WEEKDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   AND WEEKEND_FLAG = 'F')
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO			-- 평일야간근무시간 
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '30'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   -- AND ATTENDANCE_C = 'W4'
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS WEEKDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   AND WEEKEND_FLAG = 'F')
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO			-- 휴일근무시간
+				      		 		 , 0 			       AS TOT_WORKDAY_CNT   
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '30'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   -- AND ATTENDANCE_C = 'W3'
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS WEEKDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   AND WEEKEND_FLAG = 'T')
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO			-- 휴일연장근무시간
+				      		 		 , 0 			       AS TOT_WORKDAY_CNT   
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '30'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   -- AND ATTENDANCE_C = 'W3'
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS WEEKDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   AND WEEKEND_FLAG = 'T')
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO			-- 휴일야간근무시간 
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '30'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   -- AND ATTENDANCE_C = 'W3'
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS WEEKDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   AND WEEKEND_FLAG = 'T')
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO			-- 지각 
+				      		 		 , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   AND ATTENDANCE_C = 'W1'
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO		   -- 조퇴
+				      		 		 , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   AND ATTENDANCE_C = 'W1'
+							  )S
+					 WHERE 1=1
+					   AND EMP_EMNO = #{empEmno}
+				  GROUP BY EMP_EMNO
+		      		) M
+		     WHERE 1=1
+	</select>
+	
+	<!-- attend.insertAllMnthngAttdCrtCls -->
+	<insert id="insertAllMnthngAttdCrtCls">
+		INSERT INTO MONTH_DEADLINE_ATTENDANCE
+			  ( EMP_EMNO 						
+			  , MODA_TOTAL_WORK_DATE 			
+			  , MODA_WEEKDAY_WORK_DATE			
+			  , MODA_HOLIDAY_WORK_DATE 		
+			  , MODA_PVAC_UD 					
+			  , MODA_UPVAC_UD					
+			  , MODA_ABSENC_DATE				
+			  , MODA_WEEKDAY_EXTENSION_WORK_TIME 
+			  , MODA_WEEKDAY_NIGHT_WORK_TIME 	
+			  , MODA_HOLIDAY_WORK_TIME 			
+			  , MODA_HOLIDAY_EXTENSION_WORK_TIME 
+			  , MODA_HOLIDAY_NIGHT_WORK_TIME 	
+			  , MODA_LATE_TIME 					
+			  , MODA_EARLY_LEAVE_TIME			
+			  , MODA_APPLICATION_DATE 			
+			  , MODA_DEL_YN )
+		SELECT  T.EMP_EMNO 						
+			  , T.MODA_TOTAL_WORK_DATE 			
+			  , T.MODA_WEEKDAY_WORK_DATE			
+			  , T.MODA_HOLIDAY_WORK_DATE 		
+			  , T.MODA_PVAC_UD 					
+			  , T.MODA_UPVAC_UD					
+			  , T.MODA_ABSENC_DATE				
+			  , T.MODA_WEEKDAY_EXTENSION_WORK_TIME 
+			  , T.MODA_WEEKDAY_NIGHT_WORK_TIME 	
+			  , T.MODA_HOLIDAY_WORK_TIME 			
+			  , T.MODA_HOLIDAY_EXTENSION_WORK_TIME 
+			  , T.MODA_HOLIDAY_NIGHT_WORK_TIME 	
+			  , T.MODA_LATE_TIME 					
+			  , T.MODA_EARLY_LEAVE_TIME			
+			  , T.MODA_APPLICATION_DATE 			
+			  , T.MODA_DEL_YN
+		FROM 
+    	  ( SELECT M.EMP_EMNO				   AS EMP_EMNO	    		
+		         , M.TOT_WORKDAY_CNT    	   AS MODA_TOTAL_WORK_DATE   		
+				 , M.WK_WORKDAY_CNT     	   AS MODA_WEEKDAY_WORK_DATE    		
+				 , M.HOLI_WORKDAY_CNT   	   AS MODA_HOLIDAY_WORK_DATE  		
+				 , M.VAC_USEDAY_CNT      	   AS MODA_PVAC_UD    		
+				 , M.ETC_USEDAY_CNT      	   AS MODA_UPVAC_UD    		
+				 , M.ABSENC_CNT				   AS MODA_ABSENC_DATE			
+				 , M.WK_EXT_WORK_TIME    	   AS MODA_WEEKDAY_EXTENSION_WORK_TIME        
+				 , M.WK_NIGHT_WORK_TIME  	   AS MODA_WEEKDAY_NIGHT_WORK_TIME      
+				 , M.HOLI_WORK_TIME      	   AS MODA_HOLIDAY_WORK_TIME			
+				 , M.HOLI_EXT_WORK_TIME  	   AS MODA_HOLIDAY_EXTENSION_WORK_TIME      
+				 , M.HOLI_NIGHT_WORK_TIME	   AS MODA_HOLIDAY_NIGHT_WORK_TIME    
+				 , M.LATE_TIME           	   AS MODA_LATE_TIME				
+				 , M.EARLY_LEAVE_TIME    	   AS MODA_EARLY_LEAVE_TIME		
+				 , REPLACE('2018-01', '-', '') AS MODA_APPLICATION_DATE      
+				 , 'N'                         AS MODA_DEL_YN				
+		      FROM (SELECT EMP_EMNO					   AS EMP_EMNO
+		      			 , SUM(S.TOT_WORKDAY_CNT)      AS TOT_WORKDAY_CNT  
+		      			 , SUM(S.WK_WORKDAY_CNT)       AS WK_WORKDAY_CNT   
+		      			 , SUM(S.HOLI_WORKDAY_CNT)     AS HOLI_WORKDAY_CNT 
+		      			 , SUM(S.VAC_USEDAY_CNT)       AS VAC_USEDAY_CNT   
+		      			 , SUM(S.ETC_USEDAY_CNT)   	   AS ETC_USEDAY_CNT 
+		      			 , SUM(S.ABSENC_CNT)		   AS ABSENC_CNT
+		      			 , SUM(S.WK_EXT_WORK_TIME) 	   AS WK_EXT_WORK_TIME      
+		      			 , SUM(S.WK_NIGHT_WORK_TIME)   AS WK_NIGHT_WORK_TIME    
+		      			 , SUM(S.HOLI_WORK_TIME) 	   AS HOLI_WORK_TIME        
+		      			 , SUM(S.HOLI_EXT_WORK_TIME)   AS HOLI_EXT_WORK_TIME    
+		      			 , SUM(S.HOLI_NIGHT_WORK_TIME) AS HOLI_NIGHT_WORK_TIME  
+		      			 , SUM(S.LATE_TIME) 		   AS LATE_TIME             
+		      			 , SUM(S.EARLY_LEAVE_TIME) 	   AS EARLY_LEAVE_TIME      
+		      	      FROM (    SELECT EMP_EMNO			   AS EMP_EMNO 		   -- 총근무일수 계산
+		      	      				 , COUNT(*)            AS TOT_WORKDAY_CNT  
+				      			     , 0 		           AS WK_WORKDAY_CNT
+				      			     , 0 		           AS HOLI_WORKDAY_CNT
+				      			     , 0 		           AS VAC_USEDAY_CNT
+				      			     , 0 		           AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      	      GROUP BY EMP_EMNO
+				      	  UNION ALL										   
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO  	  	-- 평일근무일수 계산
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , COUNT(*) 	       AS WK_WORKDAY_CNT
+				      			     , 0 			       AS HOLI_WORKDAY_CNT
+				      			     , 0 			       AS VAC_USEDAY_CNT
+				      			     , 0 			       AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS WEEKDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   -- AND (HOLIDAY_FLAG = 'F' AND WEEKEND_FLAG = 'F'))
+																		   AND WEEKEND_FLAG = 'F')
+							  GROUP BY EMP_EMNO
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO		 	-- 휴일근무일수 계산
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , COUNT(*) 		   AS HOLI_WORKDAY_CNT
+				      			     , 0 			       AS VAC_USEDAY_CNT
+				      			     , 0 			       AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS HOLIDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   -- AND (HOLIDAY_FLAG = 'T' OR WEEKEND_FLAG = 'T'))
+																		   AND WEEKEND_FLAG = 'T')
+							  GROUP BY EMP_EMNO
+				      	  UNION ALL
+				      		 	SELECT C.EMP_EMNO		   AS EMP_EMNO		 	-- 휴가 사용일수, 기타휴가일수 계산
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , SUM(V.EMRE_PVAC_UD)   AS VAC_USEDAY_CNT
+				      			     , SUM(V.EMRE_UPVAC_UD)  AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM C
+				       LEFT OUTER JOIN EMPLOYEE_REMINDING_VAC V
+		        				    ON C.EMP_EMNO = V.EMP_EMNO  
+				      			 WHERE 1=1
+				      		  GROUP BY C.EMP_EMNO
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO		 	-- 결근일수
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0                   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      		  GROUP BY EMP_EMNO
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO			-- 평일연장근무시간 
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '30'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   -- AND ATTENDANCE_C = 'W4'
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS WEEKDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   AND WEEKEND_FLAG = 'F')
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO			-- 평일야간근무시간 
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '30'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   -- AND ATTENDANCE_C = 'W4'
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS WEEKDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   AND WEEKEND_FLAG = 'F')
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO			-- 휴일근무시간
+				      		 		 , 0 			       AS TOT_WORKDAY_CNT   
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '30'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   -- AND ATTENDANCE_C = 'W3'
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS WEEKDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   AND WEEKEND_FLAG = 'T')
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO			-- 휴일연장근무시간
+				      		 		 , 0 			       AS TOT_WORKDAY_CNT   
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '30'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   -- AND ATTENDANCE_C = 'W3'
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS WEEKDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   AND WEEKEND_FLAG = 'T')
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO			-- 휴일야간근무시간 
+				      		 	     , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '30'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   -- AND ATTENDANCE_C = 'W3'
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS WEEKDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   AND WEEKEND_FLAG = 'T')
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO			-- 지각 
+				      		 		 , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   AND ATTENDANCE_C = 'W1'
+				      	  UNION ALL
+				      		 	SELECT EMP_EMNO			   AS EMP_EMNO		   -- 조퇴
+				      		 		 , 0 			       AS TOT_WORKDAY_CNT  
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , 0  				   AS VAC_USEDAY_CNT
+				      			     , 0  				   AS ETC_USEDAY_CNT
+				      			     , 0 				   AS ABSENC_CNT
+				      			     , '0'				   AS WK_EXT_WORK_TIME
+				      			     , '0'				   AS WK_NIGHT_WORK_TIME
+				      			     , '0'				   AS HOLI_WORK_TIME
+				      			     , '0'				   AS HOLI_EXT_WORK_TIME
+				      			     , '0'				   AS HOLI_NIGHT_WORK_TIME
+				      			     , '0'				   AS LATE_TIME
+				      			     , '0'				   AS EARLY_LEAVE_TIME
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   AND ATTENDANCE_C = 'W1'
+							  )S
+					 WHERE 1=1
+					 <!--  <if test="saveMode != null and saveMode != '' and saveMode == 'ONE'">
+						  <if test="empEmno != null and empEmno != ''">
+						   AND EMP_EMNO = #{empEmno}
+						  </if>
+					  </if> -->
+				  GROUP BY EMP_EMNO
+		      		) M
+		     WHERE 1=1 
+		     ) T
+	 ON DUPLICATE KEY UPDATE MODA_TOTAL_WORK_DATE    		  = T.MODA_TOTAL_WORK_DATE 	 
+		                   , MODA_WEEKDAY_WORK_DATE  		  = T.MODA_WEEKDAY_WORK_DATE    	 
+		                   , MODA_HOLIDAY_WORK_DATE  		  = T.MODA_HOLIDAY_WORK_DATE	 
+		                   , MODA_PVAC_UD 			 		  = T.MODA_PVAC_UD    	 
+		                   , MODA_UPVAC_UD 			 		  = T.MODA_UPVAC_UD    	 
+		                   , MODA_ABSENC_DATE 		 		  = T.MODA_ABSENC_DATE			
+                           , MODA_WEEKDAY_EXTENSION_WORK_TIME = T.MODA_WEEKDAY_EXTENSION_WORK_TIME     
+                           , MODA_WEEKDAY_NIGHT_WORK_TIME 	  = T.MODA_WEEKDAY_NIGHT_WORK_TIME   
+                           , MODA_HOLIDAY_WORK_TIME 		  = T.MODA_HOLIDAY_WORK_TIME		 
+                           , MODA_HOLIDAY_EXTENSION_WORK_TIME = T.MODA_HOLIDAY_EXTENSION_WORK_TIME   
+                           , MODA_HOLIDAY_NIGHT_WORK_TIME     = T.MODA_HOLIDAY_NIGHT_WORK_TIME 
+                           , MODA_LATE_TIME 				  = T.MODA_LATE_TIME			 
+                           , MODA_EARLY_LEAVE_TIME 			  = T.MODA_EARLY_LEAVE_TIME	 
+                           , MODA_APPLICATION_DATE 			  = T.MODA_APPLICATION_DATE   
+                           , MODA_DEL_YN 					  = T.MODA_DEL_YN 
+	</insert>
+	
+	<!-- attend.insertMnthngAttdCrtCls -->
+	<insert id="insertMnthngAttdCrtCls">
+	INSERT INTO MONTH_DEADLINE_ATTENDANCE
+			  ( EMP_EMNO 						
+			  , MODA_TOTAL_WORK_DATE 			
+			  , MODA_WEEKDAY_WORK_DATE			
+			  , MODA_HOLIDAY_WORK_DATE 		
+			  , MODA_PVAC_UD 					
+			  , MODA_UPVAC_UD					
+			  , MODA_ABSENC_DATE				
+			  , MODA_WEEKDAY_EXTENSION_WORK_TIME 
+			  , MODA_WEEKDAY_NIGHT_WORK_TIME 	
+			  , MODA_HOLIDAY_WORK_TIME 			
+			  , MODA_HOLIDAY_EXTENSION_WORK_TIME 
+			  , MODA_HOLIDAY_NIGHT_WORK_TIME 	
+			  , MODA_LATE_TIME 					
+			  , MODA_EARLY_LEAVE_TIME			
+			  , MODA_APPLICATION_DATE 			
+			  , MODA_DEL_YN )
+		VALUES( #{empEmno}	    		    			/*사원번호*/       
+    	      , #{totWorkdayCnt}   	 					/*총근무일수*/      
+    	      , #{wkWorkdayCnt}    	 					/*평일근무일수*/     
+    	      , #{hoilWorkdayCnt}  	 					/*휴일근무일수*/     
+    	      , #{vacUsedayCnt}    		 				/*휴가사용일수*/     
+    	      , #{etcUsedayCnt}    	 					/*기타사용일수*/     
+    	      , #{absencCnt}			    			/*결근일수*/       
+    	      , #{wkExtWorkTime}           				/*평일연장근무시간*/   
+    	      , #{wkNightWorkTime}         				/*평일야간근무시간*/   
+    	      , #{holiWorkTime}		 					/*휴일무시간*/      
+			  , #{holiExtWorkTime}         				/*휴일연장근무시간*/   
+			  , #{holiNightWorkTime}       				/*휴일야간근무시간*/   
+			  , #{lateTime}								/*지각*/         
+			  , #{earlyLeaveTime}		    	 		/*조퇴*/         
+			  , REPLACE(#{workYyMm}, '-', '')    		/*마감일자*/
+			  , 'N')							   			/*삭제여부*/
+	 ON DUPLICATE KEY UPDATE MODA_TOTAL_WORK_DATE    		  = VALUES(MODA_TOTAL_WORK_DATE) 	 
+		                   , MODA_WEEKDAY_WORK_DATE  		  = VALUES(MODA_WEEKDAY_WORK_DATE)   	 
+		                   , MODA_HOLIDAY_WORK_DATE  		  = VALUES(MODA_HOLIDAY_WORK_DATE) 
+		                   , MODA_PVAC_UD 			 		  = VALUES(MODA_PVAC_UD)    	 
+		                   , MODA_UPVAC_UD 			 		  = VALUES(MODA_UPVAC_UD)    	 
+		                   , MODA_ABSENC_DATE 		 		  = VALUES(MODA_ABSENC_DATE)			
+                           , MODA_WEEKDAY_EXTENSION_WORK_TIME = VALUES(MODA_WEEKDAY_EXTENSION_WORK_TIME)     
+                           , MODA_WEEKDAY_NIGHT_WORK_TIME 	  = VALUES(MODA_WEEKDAY_NIGHT_WORK_TIME)   
+                           , MODA_HOLIDAY_WORK_TIME 		  = VALUES(MODA_HOLIDAY_WORK_TIME)		 
+                           , MODA_HOLIDAY_EXTENSION_WORK_TIME = VALUES(MODA_HOLIDAY_EXTENSION_WORK_TIME)   
+                           , MODA_HOLIDAY_NIGHT_WORK_TIME     = VALUES(MODA_HOLIDAY_NIGHT_WORK_TIME) 
+                           , MODA_LATE_TIME 				  = VALUES(MODA_LATE_TIME)			 
+                           , MODA_EARLY_LEAVE_TIME 			  = VALUES(MODA_EARLY_LEAVE_TIME)	 
+                           , MODA_APPLICATION_DATE 			  = VALUES(MODA_APPLICATION_DATE)   
+                           , MODA_DEL_YN 					  = VALUES(MODA_DEL_YN)
+	</insert>
+	
+	<!-- ************************************************************************************
+	 * 메뉴명 : [출결관리] - [월근태현황]
+	 * 개요    : 
+	 * @Author : 이용선
+	 * @Date   : 2018.02.08
+	 ************************************************************************************ -->
+	
+	<!-- 사원번호 검색 모달(돋보기아이콘)버튼 -->
+	<!-- SELECT ==============================================================-->
+	<select id="mAttdSelectEmpList" parameterType="HashMap"  resultType="HashMap">
+	
+		SELECT
+			(SELECT CASE WHEN RET.RETR_DEL_YN='N' THEN '재직' ELSE '퇴직' END) 		AS retrDelYn #퇴직여부
+			,E.EMP_EMNO			AS empEmno	#사원번호
+			,E.EMP_NAME			AS empName	#사원명
+			,D.DEPT_NAME		AS deptName	#부서명
+			,R.RANK_NAME		AS rankName	#직급명
+		FROM EMPLOYEE E
+		INNER JOIN RANK R 
+		 on R.RANK_CODE = E.RANK_CODE 
+		INNER JOIN DEPARTMENT D 
+		 on D.DEPT_code = E.DEPT_code 
+		INNER JOIN RETIREMENT RET
+		 on RET.EMP_EMNO = E.EMP_EMNO
+		
+		<if test='retrDelYn == "off"'> #default
+		WHERE
+			RET.RETR_DEL_YN = 'N'
+		</if>
+		<if test="retrDelYn == 'off' and keyword != null and !keyword.equals('')"> #default
+		AND
+			E.EMP_NAME LIKE CONCAT('%',#{keyword},'%') OR
+			D.DEPT_NAME LIKE CONCAT('%',#{keyword},'%') OR
+			R.RANK_NAME LIKE CONCAT('%',#{keyword},'%')
+		</if>
+		<if test="retrDelYn == 'on' and keyword != null and !keyword.equals('')"> #검색어, 퇴직자 포함
+		WHERE
+			E.EMP_NAME LIKE CONCAT('%',#{keyword},'%') OR
+			D.DEPT_NAME LIKE CONCAT('%',#{keyword},'%') OR
+			R.RANK_NAME LIKE CONCAT('%',#{keyword},'%')
+		</if>
+		<if test="retrDelYn == 'on' and retrKeyword != null and !retrKeyword.equals('')"> #검색어가 재직/퇴직, 퇴직자 포함
+		WHERE
+			RET.RETR_DEL_YN LIKE CONCAT('%',#{retrKeyword},'%')
+		</if>
+		<if test="retrDelYn == 'on' and retrKeyword != null and !retrKeyword.equals('')"> #검색어가 재직/퇴직, 퇴직자 포함
+		WHERE
+			E.EMP_EMNO like 
+		</if>
+		
+	</select>
+
+	<!-- 검색 버튼 -->
+	<!-- SELECT 달력 출력==============================================================-->
+	<select id="searchMnthAttdStat" parameterType="HashMap"  resultType="HashMap">
+		SELECT 
+			DAY  AS day
+	   	FROM calendar
+	   WHERE 1=1
+	     AND SUBSTRING(id, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+	   ORDER BY CAST(DAY AS UNSIGNED)
+
+	</select>
+
+	<!-- SELECT 근태 출력 ==============================================================-->
+	<select id="searchWorkMnthAttdStat" parameterType="HashMap"  resultType="HashMap">
+	SELECT EMP_EMNO
+	       ,COST_WRK_IN
+	       ,CAST(SUBSTRING(COST_WRK_IN, 7, 2) AS UNSIGNED) AS workDay     /*COST_WRK_IN에서 필요한 DAY 두자리만 가져올것*/
+	       ,ATTENDANCE_C AS attendanceCd
+	   FROM COMM_STM
+	  WHERE 1=1
+	    AND EMP_EMNO = '0905000211'
+	    AND SUBSTRING(COST_WRK_IN, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+	
+	</select>
+
+	<!-- ************************************************************************************
+	 * 메뉴명 : [출결관리] - [휴일 /연장 /야간근무 조회]
+	 * 개요    : 
+	 * @Author : 제영호
+	 * @Date   : 2018.01.??
+	 ************************************************************************************ -->
+	<!-- attend.readHdayExtnNightWorkInqrCnt -->
+	<select id="readHdayExtnNightWorkInqrCnt" parameterType="HashMap" resultType="int">
+			SELECT IFNULL(COUNT(*), 0) 			AS totalCnt /*휴일 /연장 /야간근무 컨텐츠 총개수*/
+			  FROM COMM_STM C
+   LEFT OUTER JOIN EMPLOYEE E
+		        ON C.EMP_EMNO = E.EMP_EMNO 
+			 WHERE 1=1
+			 <if test="empEmno != null and empEmno != ''">
+			   AND C.EMP_EMNO = #{empEmno}
+			 </if>
+			 <if test="workYyMm != null and workYyMm != ''">
+			   AND SUBSTRING(C.COST_WRK_IN, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+			 </if>
+			   AND C.ATTENDANCE_C IN ('W2', 'W3', 'W4')
+			 ;
+	</select>
+	
+	<!-- attend.readHdayExtnNightWorkInqr -->
+	<select id="readHdayExtnNightWorkInqr" parameterType="HashMap" resultType="HashMap">
+			SELECT E.EMP_EMNO  					    AS empEmno 	/*사원번호*/
+			     , E.EMP_NAME  					    AS empName	/*사원이름*/	
+			     , E.RANK_CODE 					    AS rankCode	/*직위/직급코드*/		
+			     , E.DEPT_CODE 					    AS depCode  /*부서코드*/
+			     , (SELECT A.ATTENDANCE_TYPE 
+			     	  FROM ATTENDANCE A 
+			     	 WHERE 1=1 
+			     	   AND A.ATTENDANCE_C = C.ATTENDANCE_C
+			     	) 								AS attendanceType /*근태종류*/
+			     , C.COST_WRK_TIME 					AS costWrkTime    /*근태시간*/
+			     , SUBSTRING(C.COST_WRK_IN, 1, 8) 	AS costWrkIn      /*근태일자*/
+			  FROM COMM_STM C
+   LEFT OUTER JOIN EMPLOYEE E
+		        ON C.EMP_EMNO = E.EMP_EMNO 
+			 WHERE 1=1
+			 <if test="empEmno != null and empEmno != ''">
+			   AND C.EMP_EMNO = #{empEmno}
+			 </if>
+			 <if test="workYyMm != null and workYyMm != ''">
+			   AND SUBSTRING(C.COST_WRK_IN, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+			 </if>
+			   AND C.ATTENDANCE_C IN ('W2', 'W3', 'W4')
+			 ;
+	</select>
+	
+</mapper>
+

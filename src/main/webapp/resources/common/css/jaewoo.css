@@ -1,0 +1,68 @@
+@charset "UTF-8";
+
+/*  */
+/* 여백 > margin */
+.mgl_8 {margin-left:8px;}
+
+/* 정렬 */
+.ftl {float:left;}
+.ftr {float:right;}
+
+.w_40{width:40px !important;}
+
+.w_70{width:70px !important;}
+
+.w_80{width:80px !important;}
+
+.w_120 {width:120px !important;}
+
+.w_300 {width:300px !important;}
+
+.bold_Character {font-weight:bold;}
+
+.mgu_15 {margin-top:15px;}
+
+.mgu_8 {margin-top:8px;}
+
+.mgb_5 {margin-bottom:5px;}
+
+.pdu_8 {padding-top:8px;}
+
+.boxArea{
+	overflow:hidden;
+	padding:10px 25px;
+}
+
+.scrollHead{
+	float:left;
+	width:100%;
+}
+.scrollBody{
+	float:left;
+	width:980px;
+}
+.scrollBody{
+	overflow-x: hidden; 
+	overflow-y: scroll; 
+	height:250px; 
+}
+.scrollBody tr{
+	width:100%;
+}
+
+.scrollHead, .scrollBody{
+   float:left;
+   width:100%;
+}
+
+/* .scrollBody{ */
+/*    overflow-x: hidden;  */
+/*    overflow-y: scroll; */
+/*    height:300px; */
+/* } */
+
+.scrollHead .w3, .scrollBody .w3{width:3%;}
+.scrollHead .w10, .scrollBody .w10{width:10%;}
+.scrollHead .w20, .scrollBody .w20{width:20%;}
+.scrollHead .w37, .scrollBody .w37{width:37%;}
+.scrollBody .w12{width:12%;}

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans 
+	xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc 
+		http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context 
+		http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/util 
+		http://www.springframework.org/schema/util/spring-util.xsd">
+                                                                                                                                                             
+	<!-- SpEL 설정 -->	
+	<util:properties id="comm" location="/WEB-INF/conf/local/properties.xml" />
+	
+	<beans:bean id="dataSource2" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close" >
+        
+<!-- 일반 -->	
+        <beans:property name="driverClassName"	value="#{comm['dbms.driverClassName']}" />
+        <beans:property name="url"				value="#{comm['dbms.url']}" />
+        <beans:property name="username"			value="#{comm['dbms.username']}" />
+        <beans:property name="password"			value="#{comm['dbms.password']}" />
+        
+        <beans:property name="initialSize"		value="#{comm['dbms.initialSize']}" />
+        <!-- <beans:property name="maxActive"		value="#{comm['dbms.maxActive']}" /> -->
+        <beans:property name="maxTotal"		value="#{comm['dbms.maxActive']}" />
+        <beans:property name="maxIdle"			value="#{comm['dbms.maxIdle']}" />
+        <beans:property name="maxWaitMillis"			value="#{comm['dbms.maxWait']}" />
+        <beans:property name="removeAbandonedOnBorrow"    value="true"/>
+        <beans:property name="removeAbandonedTimeout"  value="60"/>
+        
+        
+		<beans:property name="validationQuery" value="select 1 "/>
+		
+		<beans:property name="testWhileIdle" value="true"/>
+		<beans:property name="timeBetweenEvictionRunsMillis" value="#{comm['dbms.timeBERM']}" />
+		
+    </beans:bean>
+    
+    <beans:bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    	<beans:property name="dataSource" ref="dataSource2"></beans:property>
+        <beans:property name="configLocation" value="/WEB-INF/spring/mybatis/sql/mybatis-config.xml"></beans:property>
+    </beans:bean>
+    
+    <beans:bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+        <beans:constructor-arg ref="sqlSessionFactory"></beans:constructor-arg>
+    </beans:bean>
+    
+</beans:beans>

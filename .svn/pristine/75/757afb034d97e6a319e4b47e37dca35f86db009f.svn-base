@@ -1,0 +1,211 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="attend">
+	<!-- ************************************************************************************
+	 * 메뉴명 : [출결관리] - [일일근태등록]
+	 * 개요    : 
+	 * @Author : 이용선
+	 * @Date   : 2018.02.06
+	 ************************************************************************************ -->
+	
+	<!-- 출근버튼 -->
+	<!-- INSERT ==============================================================-->
+	<insert id="insertDailAttReg" parameterType="HashMap" >
+	
+		INSERT INTO COMM_STM ( 
+			  EMP_EMNO				#사원번호 
+			, ATTENDANCE_C			#근태코드 
+			, SHWK_SHF_C			#교대코드 
+			, COST_WRK_IN			#출근시간
+			, COST_DEL_YN 			#삭제여부 
+			)
+		VALUES('0905000211', 'W1', 'A1', REPLACE(NOW()+0, ',', ''), 'N'); 
+	
+	</insert>
+	
+	<!-- 출근 / 퇴근 / 검색 버튼 출력 조회  -->
+	<!-- Select ==============================================================-->
+	<select id="selectInDailAttReg" parameterType="HashMap"  resultType="HashMap">
+	
+ 		  SELECT 
+				C.EMP_EMNO 					As empEmno			#사원번호 
+				,E.EMP_NAME					As empName 			#사원이름
+				,C.COST_WRK_IN 				As wrkIn			#출근시간
+				,C.COST_WRK_OUT			    AS wrkOut			#퇴근시간
+				,C.COST_WRK_TIME		    AS wrkTm			#근무시간
+			FROM COMM_STM C	 
+ LEFT OUTER JOIN EMPLOYEE E 
+			  ON C.EMP_EMNO = E.EMP_EMNO
+		where 1=1
+			  <if test= "attendedDate != null and attendedDate != ''">
+			 AND SUBSTRING(C.COST_WRK_IN, 1, 8) = #{attendedDate} 
+			  </if>
+		ORDER BY COST_WRK_IN DESC LIMIT 1
+
+	</select>
+	<!-- ===================================================================== -->
+	
+	<!-- 퇴근버튼 -->
+	<!-- UPDATE ==============================================================-->
+	<update id="updateDailAttReg" parameterType="HashMap" >
+	
+		UPDATE COMM_STM
+   			SET COST_WRK_OUT = REPLACE(NOW()+0, ',', ''),			#퇴근시간
+   				COST_WRK_TIME = TIMEDIFF(							#근무시간
+   				DATE_FORMAT(COST_WRK_OUT, '%Y%m%d%H%i%s'), 			
+   				DATE_FORMAT(COST_WRK_IN, '%Y%m%d%H%i%s'))
+			WHERE 1=1
+ 			  AND COST_SERIAL_NUMBER = (SELECT LAST_NUM
+			 FROM (SELECT MAX(CS.COST_SERIAL_NUMBER) AS LAST_NUM
+ 			 FROM COMM_STM CS
+			WHERE 1=1
+				  AND CS.COST_WRK_IN > CURDATE() 
+				  OR CS.COST_WRK_IN > CURDATE() - INTERVAL 1 DAY
+				  ORDER BY CS.COST_WRK_IN DESC LIMIT 2 )TMP
+			);
+			
+	</update>
+	
+	<!-- ************************************************************************************
+	 * 메뉴명 : [출결관리] - [월간 근태 생성/마감]
+	 * 개요    : 
+	 * @Author : 제영호
+	 * @Date   : 2018.01.??
+	 ************************************************************************************ -->
+	 
+	<!-- attend.readMnthngAttdCrtCls -->
+	<select id="readMnthngAttdCrtCls" parameterType="HashMap" resultType="HashMap">
+			SELECT DISTINCT 
+				   E.EMP_EMNO  		   AS empEmno 	/*사원번호*/
+			     , E.EMP_NAME  		   AS empName	/*사원이름*/	
+			     , E.RANK_CODE 		   AS rankCode	/*직위/직급코드*/		
+			     , E.DEPT_CODE 		   AS depCode  /*부서코드*/
+			     , E.EMP_ANL		   AS empAnl   /*연차*/
+			  FROM COMM_STM C
+   LEFT OUTER JOIN EMPLOYEE E
+		        ON C.EMP_EMNO = E.EMP_EMNO   
+			 WHERE 1=1
+			 <if test="workYyMm != null and workYyMm != ''">
+			   AND SUBSTRING(C.COST_WRK_IN, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+			 </if>
+	</select>
+	
+	<!-- attend.readMnthngAttdCrtClsStts -->
+	<select id="readMnthngAttdCrtClsStts" parameterType="HashMap" resultType="HashMap">
+			SELECT M.TOT_WORKDAY_CNT    AS totWorkdayCnt   /*총근무일수*/
+				 , M.WK_WORKDAY_CNT     AS wkWorkdayCnt    /*평일근무일수*/
+				 , M.HOLI_WORKDAY_CNT   AS hoilWorkdayCnt  /*휴일근무일수*/
+				 , M.VAC_USEDAY_CNT     AS vacUsedayCnt    /*휴가사용일수*/
+				 , M.ETC_USEDAY_CNT     AS etcUsedayCnt    /*기타사용일수*/
+		      FROM (	SELECT SUM(S.TOT_WORKDAY_CNT)  AS TOT_WORKDAY_CNT  
+		      			     , SUM(S.WK_WORKDAY_CNT)   AS WK_WORKDAY_CNT   
+		      			     , SUM(S.HOLI_WORKDAY_CNT) AS HOLI_WORKDAY_CNT 
+		      			     , SUM(S.VAC_USEDAY_CNT)   AS VAC_USEDAY_CNT   
+		      			     , SUM(S.ETC_USEDAY_CNT)   AS ETC_USEDAY_CNT   
+		      	      	  FROM (SELECT COUNT(*)            AS TOT_WORKDAY_CNT  -- 총근무일수 계산
+				      			     , 0 		           AS WK_WORKDAY_CNT
+				      			     , 0 		           AS HOLI_WORKDAY_CNT
+				      			     , 0 		           AS VAC_USEDAY_CNT
+				      			     , 0 		           AS ETC_USEDAY_CNT
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   AND EMP_EMNO = #{empEmno}
+				      		 UNION ALL										   
+				      		 	SELECT 0 			       AS TOT_WORKDAY_CNT  -- 평일근무일수 계산
+				      			     , COUNT(*) 	       AS WK_WORKDAY_CNT
+				      			     , 0 			       AS HOLI_WORKDAY_CNT
+				      			     , 0 			       AS VAC_USEDAY_CNT
+				      			     , 0 			       AS ETC_USEDAY_CNT
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   AND EMP_EMNO = #{empEmno}
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS HOLIDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   AND (HOLIDAY_FLAG = 'F' AND WEEKEND_FLAG = 'F'))
+							 UNION ALL
+				      		 	SELECT 0 			       AS TOT_WORKDAY_CNT  -- 휴일근무일수 계산
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , COUNT(*) 		   AS HOLI_WORKDAY_CNT
+				      			     , 0 			       AS VAC_USEDAY_CNT
+				      			     , 0 			       AS ETC_USEDAY_CNT
+				      			  FROM COMM_STM
+				      			 WHERE 1=1
+				      			   AND EMP_EMNO = #{empEmno}
+				      			   AND SUBSTRING(COST_WRK_IN, 1, 8) IN (SELECT ID AS HOLIDAY 
+																	      FROM CALENDAR
+																		 WHERE 1=1
+																		   AND SUBSTRING(ID, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+																		   AND (HOLIDAY_FLAG = 'T' OR WEEKEND_FLAG = 'T'))
+							UNION ALL
+				      		 	SELECT 0 			       AS TOT_WORKDAY_CNT  -- 휴가 사용일수, 기타휴가일수 계산
+				      			     , 0 	   			   AS WK_WORKDAY_CNT
+				      			     , 0   	     		   AS HOLI_WORKDAY_CNT
+				      			     , SUM(EMRE_PVAC_UD)   AS VAC_USEDAY_CNT
+				      			     , SUM(EMRE_UPVAC_UD)  AS ETC_USEDAY_CNT
+				      			  FROM EMPLOYEE_REMINDING_VAC
+				      			 WHERE 1=1
+				      			   AND EMP_EMNO = #{empEmno}
+							  )S
+		      		) M
+		     WHERE 1=1
+	</select>
+	
+	<!-- ************************************************************************************
+	 * 메뉴명 : [출결관리] - [월근태현황]
+	 * 개요    : 
+	 * @Author : 이용선
+	 * @Date   : 2018.02.08
+	 ************************************************************************************ -->
+	<!-- 
+	<select id="mAttdSelectEmpList" parameterType="HashMap"  resultType="HashMap">
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	 
+	</select>
+ -->
+	<!-- ************************************************************************************
+	 * 메뉴명 : [출결관리] - [휴일 /연장 /야간근무 조회]
+	 * 개요    : 
+	 * @Author : 제영호
+	 * @Date   : 2018.01.??
+	 ************************************************************************************ -->
+	
+	<!-- attend.readHdayExtnNightWorkInqr -->
+	<select id="readHdayExtnNightWorkInqr" parameterType="HashMap" resultType="HashMap">
+			SELECT E.EMP_EMNO  					    AS empEmno 	/*사원번호*/
+			     , E.EMP_NAME  					    AS empName	/*사원이름*/	
+			     , E.RANK_CODE 					    AS rankCode	/*직위/직급코드*/		
+			     , E.DEPT_CODE 					    AS depCode  /*부서코드*/
+			     , (SELECT A.ATTENDANCE_TYPE 
+			     	  FROM ATTENDANCE A 
+			     	 WHERE 1=1 
+			     	   AND A.ATTENDANCE_C = C.ATTENDANCE_C
+			     	) 								AS attendanceType /*근태종류*/
+			     , C.COST_WRK_TIME 					AS costWrkTime    /*근태시간*/
+			     , SUBSTRING(C.COST_WRK_IN, 1, 8) 	AS costWrkIn      /*근태일자*/
+			  FROM COMM_STM C
+   LEFT OUTER JOIN EMPLOYEE E
+		        ON C.EMP_EMNO = E.EMP_EMNO 
+			 WHERE 1=1
+			 <if test="empEmno != null and empEmno != ''">
+			   AND C.EMP_EMNO = #{empEmno}
+			 </if>
+			 <if test="workYyMm != null and workYyMm != ''">
+			   AND SUBSTRING(C.COST_WRK_IN, 1, 6) = REPLACE(#{workYyMm}, '-', '')
+			 </if>
+			   AND C.ATTENDANCE_C IN ('W2', 'W3', 'W4')
+			 ;
+	</select>
+	
+</mapper>
+

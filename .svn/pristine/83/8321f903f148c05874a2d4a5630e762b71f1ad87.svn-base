@@ -1,0 +1,182 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="schedule">
+	<!-- 개인일정등록 -->
+	<insert id="individualInsert" parameterType="HashMap">
+		/* /personnel/schedule/scheduleMapper.xml - individualInsert(개인일정 등록 ) */
+		INSERT INTO INDIVIDUAL_PLAN
+			(
+				EMP_EMNO 			/*사원번호*/
+				,INPN_TIT 			/*제목*/
+				,INPN_CNTN 			/*내용*/
+				,INPN_STRT_DATE 	/*시작날짜*/
+				,INPN_END_DATE 		/*종료날짜*/
+				,INPN_REG_DATE 		/*등록날짜*/
+				,INPN_UPDT_DATE		/*수정날짜*/
+				,INPN_DEL_YN 		/*삭제여부*/
+			)
+		VALUES
+			(
+				#{emno},				/*사원번호*/
+				#{title},				/*제목*/
+				#{content},				/*내용*/
+				#{startDate},			/*시작날짜*/
+				#{endDate},				/*종료날짜*/
+				#{createDate},			/*등록날짜*/
+				#{updateDate},			/*수정날짜*/
+				#{delYN}				/*삭제여부*/			
+			) 
+	</insert>
+	
+	<!-- 부서일정등록 -->
+	<insert id="departmentInsert" parameterType="HashMap">
+		/* /personnel/schedule/scheduleMapper.xml - departmentInsert(부서일정 등록 ) */
+		INSERT INTO DEPARTMENT_PLAN
+			(
+				DEPT_CODE			/*부서코드*/
+				,EMP_EMNO 			/*사원번호*/
+				,DEPN_TIT 			/*제목*/
+				,DEPN_CNTN 			/*내용*/
+				,DEPN_STRT_DATE 	/*시작날짜*/
+				,DEPN_END_DATE 		/*종료날짜*/
+				,DEPN_REG_DATE 		/*등록날짜*/
+				,DEPN_UPDT_DATE		/*수정날짜*/
+				,DEPN_DEL_YN 		/*삭제여부*/
+			)
+		VALUES
+			(
+				#{deptCode},			/*부서코드*/
+				#{emno},				/*사원번호*/
+				#{title},				/*제목*/
+				#{content},				/*내용*/
+				#{startDate},			/*시작날짜*/
+				#{endDate},				/*종료날짜*/
+				#{createDate},			/*등록날짜*/
+				#{updateDate},			/*수정날짜*/
+				#{delYN}				/*삭제여부*/			
+			) 
+	</insert>
+	
+	<!-- 사원일정가져오기 -->
+	<select id="individuaSchedule" parameterType="String" resultType="HashMap">
+		/* /personnel/schedule/scheduleMapper.xml - individuaSchedule(사원일정가져오기) */
+		SELECT
+			INPN_TIT AS title											/*제목*/
+			,DATE_FORMAT(INPN_STRT_DATE,"%Y-%m-%dT%H:%i:%s") AS start	/*시작날짜*/
+			,DATE_FORMAT(INPN_END_DATE,"%Y-%m-%dT%H:%i:%s") AS end		/*종료날짜*/
+			,'#378006' as color											/*가상컬럼*/
+			,'10' as id													/*가상컬럼*/		
+		FROM INDIVIDUAL_PLAN
+		WHERE EMP_EMNO = #{emno} 
+		      AND INPN_DEL_YN = 'N'
+	</select>
+	
+	<!-- 부서일정가져오기 -->
+	<select id="departmentSchedule" parameterType="HashMap" resultType="HashMap">
+		/* /personnel/schedule/scheduleMapper.xml - departmentSchedule(부서일정가져오기) */
+		SELECT 
+			DEPN_TIT AS title											/*제목*/
+			,DATE_FORMAT(DEPN_STRT_DATE,"%Y-%m-%dT%H:%i:%s") AS start	/*시작날짜*/
+			,DATE_FORMAT(DEPN_END_DATE,"%Y-%m-%dT%H:%i:%s") AS end		/*종료날짜*/
+			,'20' as id													/*가상컬럼*/
+		FROM DEPARTMENT_PLAN
+		WHERE EMP_EMNO = #{emno} 
+			  AND DEPT_CODE = #{deptCode}
+			  AND DEPN_DEL_YN = 'N'
+	</select>
+	
+	<!-- 개인일정상세보기 --> 
+	<select id="individuaDetail" parameterType="HashMap" resultType="HashMap">
+		/* /personnel/schedule/scheduleMapper.xml - individuaDetail(개인일정상세보기) */
+		SELECT 
+			INPN_SEQ AS inpnSeq													/*일련번호*/
+			,EMP_EMNO AS empEmno												/*사원번호*/
+			,INPN_TIT AS inpnTit												/*제목*/
+			,INPN_CNTN AS inpnCntn												/*내용*/
+			,DATE_FORMAT(INPN_STRT_DATE,"%Y-%m-%dT%H:%i:%s") AS inpnStrtDate	/*시작날짜*/
+			,DATE_FORMAT(INPN_END_DATE,"%Y-%m-%dT%H:%i:%s") AS inpnEndDate		/*종료날짜*/
+			,INPN_REG_DATE AS inpnRegDate										/*등록날짜*/
+			,INPN_UPDT_DATE AS inpnUpdtDate     								/*수정날짜*/
+			,INPN_DEL_YN AS inpnDelYn 											/*삭제여부*/
+		FROM INDIVIDUAL_PLAN
+		WHERE EMP_EMNO = #{emno}
+			AND INPN_STRT_DATE = #{start}
+			AND INPN_END_DATE = #{end}
+	</select>
+	
+	<!-- 부서일정상세보기 -->
+	<select id="departmentDetail" parameterType="HashMap" resultType="HashMap">
+		/* /personnel/schedule/scheduleMapper.xml - departmentDetail(부서일정상세보기) */
+		SELECT 
+			DEPN_SEQ AS depnSeq													/*일련번호*/
+			,DEPT_CODE AS deptCode												/*부서코드*/
+			,EMP_EMNO AS empEmno												/*사원번호*/
+			,DEPN_TIT AS depnTit												/*제목*/
+			,DEPN_CNTN AS depnCntn												/*내용*/
+			,DATE_FORMAT(DEPN_STRT_DATE,"%Y-%m-%dT%H:%i:%s") AS depnStrtDate	/*시작날짜*/
+			,DATE_FORMAT(DEPN_END_DATE,"%Y-%m-%dT%H:%i:%s") AS depnEndDate		/*종료날짜*/
+			,DEPN_REG_DATE AS depnRegDate										/*등록날짜*/
+			,DEPN_UPDT_DATE AS depnUpdtDate     								/*수정날짜*/
+			,DEPN_DEL_YN AS depnDelYn 											/*삭제여부*/
+		FROM DEPARTMENT_PLAN
+		WHERE EMP_EMNO = #{emno}
+			AND DEPN_STRT_DATE = #{start}
+			AND DEPN_END_DATE = #{end}
+	</select>
+	
+	<!-- 개인일정삭제 -->
+	<update id="individuaDelete" parameterType="HashMap">
+		/* /personnel/schedule/scheduleMapper.xml - individuaDelete(개인일정삭제) */
+		UPDATE 
+			INDIVIDUAL_PLAN 
+		SET 
+			INPN_DEL_YN = "Y"
+			,INPN_UPDT_DATE = DATE_FORMAT(now(),"%Y%m%d%H%i%s")
+		WHERE 
+			INPN_SEQ = #{seq}
+	</update>
+	
+	<!-- 부서일정삭제 -->
+	<update id="departmentDelete" parameterType="HashMap">
+		/* /personnel/schedule/scheduleMapper.xml - departmentDelete(부서일정삭제) */
+		UPDATE 
+			DEPARTMENT_PLAN 
+		SET 
+			DEPN_DEL_YN = "Y"
+			,DEPN_UPDT_DATE = DATE_FORMAT(now(),"%Y%m%d%H%i%s")
+		WHERE 
+			DEPN_SEQ = #{seq}
+	</update>
+	
+	<!-- 개인일정수정 -->
+	<update id="individuaUpdate" parameterType="HashMap">
+		/* /personnel/schedule/scheduleMapper.xml - individuaUpdate(개인일정수정) */
+		UPDATE
+			INDIVIDUAL_PLAN
+		SET
+			INPN_TIT = #{title}
+			,INPN_CNTN = #{content}
+			,INPN_STRT_DATE = #{startDate}
+			,INPN_END_DATE = #{endDate}
+			,INPN_UPDT_DATE = DATE_FORMAT(now(),"%Y%m%d%H%i%s")
+		WHERE
+			INPN_SEQ = #{seq}
+	</update>
+	
+	<!-- 부서일정수정 -->
+	<update id="departmentUpdate" parameterType="HashMap">
+		/* /personnel/schedule/scheduleMapper.xml - departmentUpdate(부서일정수정) */
+		UPDATE
+			DEPARTMENT_PLAN
+		SET
+			DEPN_TIT = #{title}
+			,DEPN_CNTN = #{content}
+			,DEPN_STRT_DATE = #{startDate}
+			,DEPN_END_DATE = #{endDate}
+			,DEPN_UPDT_DATE = DATE_FORMAT(now(),"%Y%m%d%H%i%s")
+		WHERE
+			DEPN_SEQ = #{seq}
+	</update>
+	
+</mapper>

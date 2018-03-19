@@ -1,0 +1,167 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>   
+    
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+</head>
+
+<script type="text/javascript">
+	$(document).ready(function(){
+		console.log($('#weekRosterTable thead>tr:eq(1)>th:eq(0)').text());
+		var week = $('input[name=yearMonth]').val();
+		var thisWeek = weekCalculation(week);
+		
+		dbDataInputOutput(thisWeek[0], thisWeek[6]);
+		
+		$("#weekInput").html("주간근무표("+ thisWeek[0] + "~" + thisWeek[6] + ")");
+	});
+	
+	function weekCalculation(week){
+		var weekRosterDateString = week;
+		
+		var year = weekRosterDateString.substring(0,4);
+		var month = weekRosterDateString.substring(5,7);
+		var day = weekRosterDateString.substring(8,10);
+		
+		var thisWeek = new Date(year, month-1, day);
+		var theYear = thisWeek.getFullYear();
+		var theMonth = thisWeek.getMonth();
+		var theDate  = thisWeek.getDate();
+		var theDayOfWeek = thisWeek.getDay();
+		
+		var thisWeek = [];
+		
+		for(var i=0; i<7; i++) {
+			var resultDay = new Date(theYear, theMonth, theDate + (i - theDayOfWeek));
+			var yyyy = resultDay.getFullYear();
+			var mm = Number(resultDay.getMonth()) + 1;
+			var dd = resultDay.getDate();
+			
+			mm = String(mm).length === 1 ? '0' + mm : mm;
+			dd = String(dd).length === 1 ? '0' + dd : dd;
+			
+			thisWeek[i] = yyyy + '-' + mm + '-' + dd;
+			
+			$('#weekRosterTable thead>tr:eq(1)>th').eq(i).text(dd);
+		}
+		
+		console.log(thisWeek);
+		
+		return thisWeek;
+	}
+	
+	function dbDataInputOutput(firstDay, lastDay){
+		var obj = new Object();
+		var dataArray = new Array();
+		
+		obj.startFirstDay = firstDay;
+		obj.startLastDay = lastDay;
+		dataArray.push(obj);
+		
+		var data = {"firstDayLastDay" : dataArray};
+		
+		var eventsObj = new Object();
+		var eventsArray = new Array();
+		
+		//db에 있는 데이터(options.events)를 받아와서  jsp페이지에있는 근무표에 자신이 몇번 근무인지 알수있게 넣어주는 곳.
+		//비동기를 동기로 바꿔서 순서대로 처리할수있게해줌.
+		//eventsObj에 options.events에 들어가는 데이터들을 다 넣고
+		//eventsArray 배열에 오브젝트를 넣어줌.
+		paging.ajaxSubmit("/spring/holidayRosterEventsList.ajax", data, function(result){
+			for(var i = 0 ; i < result.length ; i++){
+				eventsObj.start = result[i].start;
+				eventsObj.end = result[i].end;
+				eventsObj.text = result[i].text;
+				eventsObj.id = result[i].id;
+				eventsObj.resource = result[i].resource;
+				
+				eventsArray.push(eventsObj);
+				eventsObj = {};
+			}
+			
+// 			options.events = eventsArray;
+			
+    	}, false);
+	}
+	
+	function iconClick(obj){
+		var weekRosterDateString = $('input[name=yearMonth]').val();
+		
+		var year = weekRosterDateString.substring(0,4);
+		var month = weekRosterDateString.substring(5,7);
+		var day = weekRosterDateString.substring(8,10);
+		
+		var week = new Date(year, month-1, day);
+		
+		if($(obj).attr('id') == 'rightIcon'){
+			week.setDate(week.getDate() + 7);
+		}else{
+			week.setDate(week.getDate() - 7);
+		}
+		
+		var yearMonth = week.getFullYear() + "-" + ((week.getMonth()+1)<10 ? '0' + (week.getMonth()+1) : (week.getMonth()+1)) + '-' +
+        (week.getDate()<10 ? '0'+week.getDate() : week.getDate());
+		
+		$('input[name=yearMonth]').val(yearMonth);
+		
+		var thisWeek = weekCalculation($('input[name=yearMonth]').val());
+		
+		$("#weekInput").html("주간근무표("+ thisWeek[0] + "~" + thisWeek[6] + ")");
+	}
+	
+</script> 
+
+<body>
+<div class="main">
+	<div class="main-content">
+		<div class="container-fluid">
+			<span class="icon"><i class="fa fa-chevron-left" onclick="iconClick(this)" id="leftIcon"></i></span>
+				<div id="weekInput" style="display:inline"></div>
+			<span class="icon"><i class="fa fa-chevron-right" onclick="iconClick(this)" id="rightIcon"></i></span>
+			
+			<table border="1" id="weekRosterTable" style="margin-top: 10px;">
+				<thead>
+					<tr>
+						<th rowspan="2">구분</th>
+						<th class="sun">일요일</th>
+						<th>월요일</th>
+						<th>화요일</th>
+						<th>수요일</th>
+						<th>목요일</th>
+						<th>금요일</th>
+						<th class="sat">토요일</th>
+					</tr>
+					<tr>
+						<th class="sun"></th>
+						<th></th>
+						<th></th>
+						<th></th>
+						<th></th>
+						<th></th>
+						<th class="sat"></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<th class="D">Day 근무</th>
+						<th class="D"></th>
+						<th class="D"></th>
+						<th class="D"></th>
+						<th class="D"></th>
+						<th class="D"></th>
+						<th class="D"></th>
+						<th class="D"></th>
+					</tr>
+				</tbody>
+			</table>
+			<input type="hidden" name="yearMonth" value="${formYearMonth}">
+		</div>
+	</div>
+</div>
+</body>
+</html>

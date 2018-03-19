@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE tiles-definitions PUBLIC  "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"  "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">  
+ 
+<tiles-definitions>  
+  
+   <!-- Base Definition -->
+   <definition name="base-definition" template="/WEB-INF/views/common/defaultLayout.jsp">  
+       <put-attribute name="title" value="" />  
+       <put-attribute name="header" value="/WEB-INF/views/common/defaultHeader.jsp" />  
+       <put-attribute name="menu" value="/WEB-INF/views/common/defaultMenu.jsp" />  
+       <put-attribute name="body" value="" />  
+       <put-attribute name="footer" value="" />  
+       <put-attribute name="scripts" value="" />
+   </definition>  
+
+   <!-- Home Page -->
+   <definition name="home" extends="base-definition">  
+       <put-attribute name="title" value="Welcome" />  
+       <put-attribute name="body" value="/WEB-INF/views/home.jsp" />  
+   </definition>  
+
+   <!-- Product Page -->
+   <definition name="products" extends="base-definition">  
+       <put-attribute name="title" value="Products" />  
+       <put-attribute name="body" value="/WEB-INF/views/pages/products.jsp" />  
+   </definition>  
+
+   <!-- Contact-us Page -->
+   <definition name="contactus" extends="base-definition">  
+       <put-attribute name="title" value="Contact Us" />  
+       <put-attribute name="body" value="/WEB-INF/views/pages/contactus.jsp" />  
+   </definition>  
+   
+   <!-- login page -->
+   <definition name="login" template="/WEB-INF/views/login.jsp">
+   </definition>
+   
+   <!-- main page-->
+   <definition name="main" extends="base-definition">  
+       <put-attribute name="title" value="main" />
+       <put-attribute name="body" value="/WEB-INF/views/dashboard.jsp" />
+   </definition>
+
+   <!-- START [인사관리] -->
+   <!-- [인사관리]-[일정관리]-[일정보기] -->
+   <definition name="scheduleView" extends="base-definition">  
+       <put-attribute name="title" value="일정보기" />
+       <put-attribute name="body" value="/WEB-INF/views/personnel/schedule/scheduleView.jsp" />
+       <put-attribute name="scripts" value="/WEB-INF/views/personnel/schedule/script/scheduleScript.jsp"/>
+   </definition>
+   
+   <!-- [인사관리]-[증명서관리]-[증명서신청] -->
+   <definition name="certificateRequest" extends="base-definition">  
+       <put-attribute name="title" value="증명서신청" />
+       <put-attribute name="body" value="/WEB-INF/views/personnel/certificate/certificateRequest.jsp" />
+       <put-attribute name="scripts" value="/WEB-INF/views/personnel/certificate/script/certificateRequestScript.jsp"/>
+   </definition>
+   
+   <!-- [인사관리]-[증명서관리]-[증명서발급대장] -->
+   <definition name="certificateIssue" extends="base-definition">  
+       <put-attribute name="title" value="증명서발급대장" />
+       <put-attribute name="body" value="/WEB-INF/views/personnel/certificate/certificateIssue.jsp" />
+       <put-attribute name="scripts" value="/WEB-INF/views/personnel/certificate/script/certificateIssueScript.jsp"/>
+   </definition>
+   
+   <!-- [인사관리] END -->
+  
+   <!--  START [급여관리] -->
+   
+   <!-- [직원급여관리 등록] [신규계산,등록] [기존계산,수정] -->
+     <definition name="emp_main" extends="base-definition">  
+       <put-attribute name="title" value="" />
+       <put-attribute name="body" value="/WEB-INF/views/SalManager/emp/emp_main.jsp" />  
+     </definition>
+  	
+  	  <!-- [신규계산,등록]  -->
+  	 <definition name="emp_exisali" extends="base-definition">  
+       <put-attribute name="title" value="" />
+       <put-attribute name="body" value="/WEB-INF/views/SalManager/emp/emp_exisali.jsp" />  
+     </definition>
+     
+     <!-- [기존계산,수정]  -->
+     <definition name="emp_newsali" extends="base-definition">  
+       <put-attribute name="title" value="" />
+       <put-attribute name="body" value="/WEB-INF/views/SalManager/emp/emp_newsali.jsp" />  
+     </definition>
+     
+     <!-- [급여대장] -->
+     <definition name="payc_main" extends="base-definition">  
+       <put-attribute name="title" value="" />
+       <put-attribute name="body" value="/WEB-INF/views/SalManager/payc/payc_main.jsp" />  
+     </definition>
+   
+    <!-- [수당정보] -->
+    <definition name="allowanceData" extends="base-definition">  
+       <put-attribute name="title" value="" />
+       <put-attribute name="body" value="/WEB-INF/views/SalManager/payimf/allowanceData.jsp" />  
+     </definition>
+   
+   <!--  [급여관리] END -->
+   
+   
+   <!-- START [근태관리] -->
+   <!-- [근태관리]-[출결관리]-[일일근태등록] -->
+   <definition name="dailAttdReg" extends="base-definition">  
+       <put-attribute name="title" value="일일근태등록" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/attend/dailAttdReg.jsp" />  
+   </definition>
+   
+   <!-- [근태관리]-[출결관리]-[월간근태생성/마감] -->
+   <definition name="mnthngAttdCrtCls" extends="base-definition">  
+       <put-attribute name="title" value="월간근태생성/마감" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/attend/mnthngAttdCrtCls.jsp" />  
+   </definition>
+   
+   <!-- [근태관리]-[출결관리]-[월근태현황] -->
+   <definition name="mnthAttdStat" extends="base-definition">  
+       <put-attribute name="title" value="월근태현황" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/attend/mnthAttdStat.jsp" />  
+   </definition>   
+   
+   <!-- [근태관리]-[출결관리]-[휴일/연장/야간근무조회] -->
+   <definition name="hdayExtnNightWorkInqr" extends="base-definition">  
+       <put-attribute name="title" value="휴일/연장/야간근무조회" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/attend/hdayExtnNightWorkInqr.jsp" />  
+   </definition> 
+   
+   <!-- [근태관리]-[출장관리]-[출장신청] -->
+   <definition name="businessRequest" extends="base-definition">  
+       <put-attribute name="title" value="출장신청" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/business/businessRequest.jsp" />  
+   </definition>  
+   
+     <!-- [근태관리]-[출장관리]-[출장정산] -->
+   <definition name="businessAdj" extends="base-definition">  
+       <put-attribute name="title" value="출장정산" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/business/businessAdj.jsp" />  
+   </definition>
+   
+   <!-- [근태관리]-[휴가관리](메인 대시보드) -->
+   <definition name="dashboard" extends="base-definition">  
+       <put-attribute name="title" value="Dashboard" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/vacation/dashboard.jsp" />  
+   </definition>  
+   
+   <!-- [근태관리]-[휴가관리](대시보드) -->
+<!--    <definition name="vacationDashboard" extends="base-definition">   -->
+<!--        <put-attribute name="title" value="휴가관리" /> -->
+<!--        <put-attribute name="body" value="/WEB-INF/views/attendance/vacation/vacationDashboard.jsp" />   -->
+<!--    </definition>    -->
+   
+   <!-- [근태관리]-[휴가관리]-[휴가일수설정] -->
+   <definition name="vacationCount" extends="base-definition">  
+       <put-attribute name="title" value="휴가일수설정" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/vacation/vacationCount.jsp" />  
+   </definition>
+      
+   <!-- [근태관리]-[휴가관리]-[휴가일수설정]-[사원등록] -->
+   <definition name="vacationCountEmpSignUp" extends="base-definition">  
+       <put-attribute name="title" value="휴가일수설정" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/vacation/vacationCountEmpSignUp.jsp" />  
+   </definition>
+
+   <!-- [근태관리]-[휴가관리]-[휴가신청] -->
+   <definition name="vacationRequest" extends="base-definition">  
+       <put-attribute name="title" value="휴가신청" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/vacation/vacationRequest.jsp" />  
+   </definition>
+   
+   <!-- [근태관리]-[휴가관리]-[휴가조회](관리자) -->
+   <definition name="vacationListAdmin" extends="base-definition">  
+       <put-attribute name="title" value="휴가조회(관리자)" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/vacation/vacationListAdmin.jsp" />  
+   </definition>
+   
+   <!-- [근태관리]-[휴가관리]-[휴가조회](관리자)-휴가신청현황 -->
+   <definition name="vacationProgressList" extends="base-definition">  
+       <put-attribute name="title" value="휴가신청현황" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/vacation/vacationProgressList.jsp" />  
+   </definition>
+   
+   <!-- [근태관리]-[휴가관리]-[휴가조회](사원) -->
+   <definition name="vacationList" extends="base-definition">  
+       <put-attribute name="title" value="휴가조회(사원)" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/vacation/vacationList.jsp" />  
+   </definition>
+   
+   <!-- [근태관리]-[휴가관리]-[휴가월마감](관리자) -->
+   <definition name="vacationMonthlyReport" extends="base-definition">  
+       <put-attribute name="title" value="휴가월마감(관리자)" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/vacation/vacationMonthlyReport.jsp" />  
+   </definition>
+   
+   <!-- [근태관리]-[휴가관리]-[근태/출장/연차마감관리](관리자) -->
+   <definition name="salMonthlyReport" extends="base-definition">  
+       <put-attribute name="title" value="근태/출장/연차마감관리" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/vacation/salMonthlyReport.jsp" />  
+   </definition>      
+   
+   <!-- [근태관리]-[근태기초정보설정/조회]-[휴가항목설정](사원) -->
+   <definition name="holidaySet" extends="base-definition">  
+       <put-attribute name="title" value="휴가항목설정" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/holidaySet/holidaySet.jsp" />  
+   </definition>
+   
+   <!-- [근태관리]-[근태기초정보설정/조회]-[휴가항목설정](사원) -->
+   <definition name="individualRoster" extends="base-definition">  
+       <put-attribute name="title" value="휴가항목설정" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/holidaySet/individualRoster.jsp" />  
+   </definition>
+   
+   <!-- [근태관리]-[근태기초정보설정/조회]-[휴가항목설정](사원) -->
+   <definition name="weekRoster" extends="base-definition">  
+       <put-attribute name="title" value="휴가항목설정" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/holidaySet/weekRoster.jsp" />  
+   </definition>
+   
+   
+   <!-- [근태관리]-[근태기초정보설정/조회]-[근무표생성](관리자) -->
+   <definition name="holidayRoster" extends="base-definition">  
+       <put-attribute name="title" value="휴가항목설정" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/holidaySet/holidayRoster.jsp" />  
+   </definition>
+   
+    <!-- [근태관리]-[근태기초정보설정/조회]-[근무표조회](관리자) -->
+   <definition name="holidayRosterCheck" extends="base-definition">  
+       <put-attribute name="title" value="휴가항목설정" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/holidaySet/holidayRosterCheck.jsp" />  
+   </definition>
+   
+      <!-- [근태관리]-[근태기초정보설정/조회]-[근무표생성](관리자) -->
+   <definition name="holidayRosterSetting" extends="base-definition">  
+       <put-attribute name="title" value="휴가항목설정" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/holidaySet/holidayRosterSetting.jsp" />  
+   </definition>
+   
+   
+    <!-- [근태관리]-[근태기초정보설정/조회]-[휴가항목설정](사원) -->
+   <definition name="holiDyMng" extends="base-definition">  
+       <put-attribute name="title" value="휴가항목설정" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/holidaySet/holiDyMng.jsp" />  
+   </definition>
+   <!-- [근태관리]-[근태기초정보설정/조회]-[휴가항목설정](사원) -->
+   <definition name="conWorkVacSet" extends="base-definition">  
+       <put-attribute name="title" value="휴가항목설정" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/holidaySet/conWorkVacSet.jsp" />  
+   </definition>
+   <!-- [근태관리]-[근태기초정보설정/조회]-[휴일설정] -->
+   <definition name="holiDyMng" extends="base-definition">  
+       <put-attribute name="title" value="휴일설정" />
+       <put-attribute name="body" value="/WEB-INF/views/attendance/holidaySet/holiDyMng.jsp" />
+       <put-attribute name="scripts" value="/WEB-INF/views/attendance/holidaySet/script/holiDyMngScript.jsp"/>
+   </definition>
+   
+   <!-- END [근태관리] -->
+   
+   <!-- [권한관리] START -->
+ 
+   <definition name="commonList" extends="base-definition">
+		<put-attribute name="title" value="공통관리(관리자)" />
+		<put-attribute name="body" value="/WEB-INF/views/management/common/commonList.jsp" />
+		<put-attribute name="scripts" value="/WEB-INF/views/management/common/script/commonCode.jsp"/>
+   </definition>
+   
+   <!-- [권한관리]-[메뉴관리메인]-->
+   <definition name="menuTreeMain" extends="base-definition">
+		<put-attribute name="title" value="메뉴관리(관리자)" />
+		<put-attribute name="body" value="/WEB-INF/views/management/menuTree/menuTreeMain.jsp" />
+		<put-attribute name="scripts" value="/WEB-INF/views/management/menuTree/script/menuTree.jsp"/>
+   </definition>
+   
+   <!-- [권한관리]-[메뉴관리상세정보]-->
+   <definition name="menuDetail" template="/WEB-INF/views/management/menuTree/menuDetail.jsp">
+   </definition>
+   
+   <!-- [권한관리]-[메뉴관리업데이트폼]-->
+   <definition name="menuUpdateForm" template="/WEB-INF/views/management/menuTree/menuUpdateForm.jsp">
+   </definition>
+   
+   <!-- [권한관리]-[메뉴관리등록폼]-->
+   <definition name="menuInsertForm" template="/WEB-INF/views/management/menuTree/menuInsertForm.jsp">
+   </definition>
+   
+   <!-- [권한관리]-[권한관리메인]-->
+	<definition name="authorityMain" extends="base-definition">
+		<put-attribute name="title" value="권한관리(관리자)" />
+		<put-attribute name="body" value="/WEB-INF/views/management/authority/authorityMain.jsp"/>
+		<put-attribute name="scripts" value="/WEB-INF/views/management/authority/script/authorityMainjs.jsp"></put-attribute>
+   </definition>
+   
+   <!-- [권한관리]-[권한상세등록]-->
+	<definition name="authorityDetail" extends="base-definition">
+   		<put-attribute name="title" value="권한관리(관리자)" />
+		<put-attribute name="body" value="/WEB-INF/views/management/authority/authorityDetail.jsp"/>
+		<put-attribute name="scripts" value="/WEB-INF/views/management/authority/script/authorityDetailjs.jsp"></put-attribute>
+   </definition>
+   
+   <!-- [권한관리]-[메뉴권한상세] -->
+ 	<definition name="authorityData" template="/WEB-INF/views/management/authority/authorityData.jsp">
+ 	</definition>
+
+ 	<!-- [권한관리]-[메뉴권한등록폼] -->
+ 	<definition name="authorityInsertForm" template="/WEB-INF/views/management/authority/authorityInsertForm.jsp">
+ 	</definition>
+ 	
+ 	<!-- [권한관리]-[메뉴권한수정폼] -->
+ 	<definition name="authorityUpdateForm" template="/WEB-INF/views/management/authority/authorityUpdateForm.jsp">
+ 	</definition>
+ 
+   
+   <!-- [권한관리] END -->
+   
+</tiles-definitions>

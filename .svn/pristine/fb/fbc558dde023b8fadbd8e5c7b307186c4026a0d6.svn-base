@@ -1,0 +1,92 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="payc">
+
+<!-- 							SELECT								-->
+	<select id="paycList" parameterType="HashMap" resultType="HashMap"> 
+        
+        SELECT *FROM SAL_REGISTER ORDER BY SREG_YYMM DESC;
+           
+    </select>
+    
+    <select id="getEmpemno" parameterType="HashMap" resultType="HashMap">
+		
+		SELECT EMP_EMNO FROM SAL_EMPLOYEE
+	
+	</select>
+	
+	<select id="searchEmym" parameterType="HashMap" resultType="HashMap">
+		
+		SELECT SCAL_EMYM FROM SAL_CALCULATION WHERE SCAL_EMYM = #{emym}
+		
+	</select>
+    
+    <select id ="sal_calList" parameterType="HashMap" resultType="HashMap"> 
+    
+    	
+    </select>
+
+	<select id = "select_payc" parameterType="HashMap" resultType="HashMap">
+		
+		SELECT * FROM SAL_CALCULATION WHERE SCAL_YYMM=#{cyymm}
+	
+	</select>
+<!--<select id="departmentSearch" parameterType="HashMap" resultType="HashMap">
+
+		SELECT
+			DEPT_CODE as deptCode
+			,DEPT_NAME as deptName
+		FROM DEPARTMENT WHERE DEPT_NAME LIKE CONCAT('%',#{deptName},'%')
+			
+	</select> -->
+<!-- 							INSERT								-->
+	<insert id="makePaycInsert">
+	
+		INSERT INTO SAL_REGISTER
+		(SREG_YYMM
+		,SREG_NAME
+		,SREG_PDAY
+		,SREG_PYYMM)
+		VALUES(#{pyymm},#{paycname},#{payday},#{payyymm})
+	
+	</insert>
+	
+	<!-- 전체계산 insert 데이터가없을 시 -->
+	<insert id="acalInsert" parameterType="HashMap">		
+		INSERT INTO SAL_CALCULATION(SCAL_EMYM, SCAL_EMNO, SCAL_SAL, SCAL_YYMM)
+     	VALUES (#{emym},
+				
+			(SELECT S.EMP_EMNO
+			    FROM SAL_EMPLOYEE S, EMPLOYEE E
+			    WHERE S.EMP_EMNO = E.EMP_EMNO AND S.EMP_EMNO =#{emp_emno}),
+				
+			(SELECT SEMP_SAL
+				FROM SAL_EMPLOYEE S, EMPLOYEE E
+				WHERE S.EMP_EMNO = E.EMP_EMNO AND S.EMP_EMNO =#{emp_emno}),
+				
+			#{yymm})
+	</insert>
+	
+	
+	<!-- 전체계산 update 데이터가 존재할 시 -->
+	<update id="acalUpdate" parameterType="HashMap">	    
+		UPDATE SAL_CALCULATION
+		SET 
+			SCAL_EMNO = (SELECT S.EMP_EMNO
+			    		FROM SAL_EMPLOYEE S, EMPLOYEE E
+			    		WHERE S.EMP_EMNO = E.EMP_EMNO AND S.EMP_EMNO =#{emp_emno}),
+					
+			SCAL_SAL = 	(SELECT SEMP_SAL
+						FROM SAL_EMPLOYEE S, EMPLOYEE E
+						WHERE S.EMP_EMNO = E.EMP_EMNO AND S.EMP_EMNO =#{emp_emno})		
+		
+			WHERE SCAL_EMNO = #{emp_emno};
+	
+	</update>
+
+	
+	
+	
+</mapper>

@@ -1,0 +1,117 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>재직증명서</title>
+</head>
+<body>
+	<div style="margin: 0px auto; width: 650px;">
+		<div style='background: url("http://login.ecounterp.com/MemberInfo/Logo/_G0080_3cd2e3fe35d14ce4d9e17e4dc1f39e70_sign.gif") no-repeat 384px 94%;'>
+			<div style="text-align: left; font-size: 12px;">
+				발급번호 : 2015-1호
+			</div>
+			<div style="border: 1px solid rgb(0, 0, 0); border-image: none;">
+				<table style="width: 650px;" border="0" cellspacing="0"	cellpadding="0">
+					<tbody>
+						<tr>
+							<td	style="height: 150px; text-align: center; font-size: 26px; font-weight: bold;">
+								<u>재 직 증 명 서</u>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<table style="margin: 13px 0px 0px; width: 650px; color: rgb(0, 0, 0); font-size: 12px; border-top-color: rgb(0, 0, 0); 
+							border-top-width: 1px; border-top-style: solid; border-collapse: collapse; table-layout: fixed;"
+							border="0" cellspacing="0" cellpadding="0">
+					<colgroup>
+						<col style="width: 180px;">
+					</colgroup>
+					<tbody>
+						<tr>
+							<th style="height: 40px; text-align: center; font-weight: bold; border-right-color: rgb(0, 0, 0); 
+									border-bottom-color: rgb(0, 0, 0); border-right-width: 1px; border-bottom-width: 1px; 
+									border-right-style: solid; border-bottom-style: solid;">성명
+							</th>
+							<td	style="text-align: left; border-bottom-color: rgb(0, 0, 0); border-bottom-width: 1px; 
+									border-bottom-style: solid;">&nbsp;홍길순
+							</td>
+						</tr>
+						<tr>
+							<th style="height: 40px; text-align: center; font-weight: bold; border-right-color: rgb(0, 0, 0); border-bottom-color: rgb(0, 0, 0); 
+									border-right-width: 1px; border-bottom-width: 1px; border-right-style: solid; border-bottom-style: solid;">생년월일
+							</th>
+							<td style="text-align: left; border-bottom-color: rgb(0, 0, 0); border-bottom-width: 1px; border-bottom-style: solid;">
+								&nbsp;1990년 09월 30일
+							</td>
+						</tr>
+						<tr>
+							<th style="height: 40px; text-align: center; font-weight: bold; border-right-color: rgb(0, 0, 0); border-bottom-color: rgb(0, 0, 0); 
+									border-right-width: 1px; border-bottom-width: 1px; border-right-style: solid; border-bottom-style: solid;">주 소
+							</th>
+							<td style="height: 40px; text-align: left; border-bottom-color: rgb(0, 0, 0); border-bottom-width: 1px; 
+									border-bottom-style: solid;">&nbsp;경기도	광명시 철산동 래미안자이 아파트 ooo동 oooo호
+							</td>
+						</tr>
+						<tr>
+							<th style="height: 40px; text-align: center; font-weight: bold; border-right-color: rgb(0, 0, 0); 
+									border-bottom-color: rgb(0, 0, 0); border-right-width: 1px; border-bottom-width: 1px; 
+									border-right-style: solid; border-bottom-style: solid;">소 속
+							</th>
+							<td style="height: 40px; text-align: left; border-bottom-color: rgb(0, 0, 0); border-bottom-width: 1px; 
+									border-bottom-style: solid;">&nbsp;영업교육팀
+							</td>
+						</tr>
+						<tr>
+							<th	style="height: 40px; text-align: center; font-weight: bold; border-right-color: rgb(0, 0, 0); 
+									border-bottom-color: rgb(0, 0, 0); border-right-width: 1px; border-bottom-width: 1px; 
+									border-right-style: solid; border-bottom-style: solid;">직 위
+							</th>
+							<td	style="height: 40px; text-align: left; border-bottom-color: rgb(0, 0, 0); border-bottom-width: 1px; 
+									border-bottom-style: solid;">&nbsp;사원
+							</td>
+						</tr>
+						<tr>
+							<th	style="height: 40px; text-align: center; font-weight: bold; border-right-color: rgb(0, 0, 0); border-bottom-color: rgb(0, 0, 0); 
+									border-right-width: 1px; border-bottom-width: 1px; border-right-style: solid; border-bottom-style: solid;">근무기간
+							</th>
+							<td	style="height: 40px; text-align: left; border-bottom-color: rgb(0, 0, 0); border-bottom-width: 1px; border-bottom-style: solid;">
+									&nbsp;2010년	09월 23일~2015년 05월 05일
+							</td>
+						</tr>
+						<tr>
+							<th	style="height: 40px; text-align: center; font-weight: bold; border-right-color: rgb(0, 0, 0); border-bottom-color: rgb(0, 0, 0); 
+									border-right-width: 1px; border-bottom-width: 1px; border-right-style: solid; border-bottom-style: solid;">용 도
+							</th>
+							<td style="height: 40px; text-align: left; border-bottom-color: rgb(0, 0, 0); border-bottom-width: 1px; 
+									border-bottom-style: solid;">&nbsp;금융기관제출용
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<table style="width: 650px;" border="0" cellspacing="0"
+					cellpadding="0">
+					<tbody>
+						<tr>
+							<td style="height: 300px; text-align: center; padding-top: 30px; font-size: 16px; font-weight: bold; vertical-align: top;">
+								위와 같이 증명합니다.
+							</td>
+						</tr>
+						<tr>
+							<td	style="text-align: center; line-height: 30px; padding-bottom: 30px; font-size: 12px;">
+								<div>
+									<p>2015년 05월 05일
+									<p>서울 구로구 구로3동 에이스하이엔드타워2차 1703
+									<p> 대 표 이 사 김신래
+									<p>(주)회사이름
+								</div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

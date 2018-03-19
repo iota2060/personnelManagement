@@ -1,0 +1,139 @@
+<!--?xml version="1.0" encoding="UTF-8"? -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="authority">
+	<select id="empMaxNum" parameterType="HashMap" resultType="int">
+		select
+			IFNULL(count(*),0) empMaxNum		
+		from		
+		(select      
+			employee.emp_name emp_name, /*사원이름*/
+			department.dept_name dept_name, /*부서명*/
+			rank.rank_name rank_name /*직급명*/
+		from employee join department   
+		on employee.dept_code = department.dept_code   
+		join rank   
+		on employee.rank_code = rank.rank_code     
+		where employee.emp_del_yn ='N' 
+		<if test="searchCnd != null and searchCnd !=''">
+			<choose>
+				<when test="searchCnd == 'deptName'">
+					and dept_name LIKE CONCAT('%',#{searchWd},'%') 
+				</when>
+				<when test="searchCnd == 'rankName'">
+					and rank_name LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'empName'">
+					and emp_name LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+			</choose>
+		</if>
+		)x
+	</select>
+	<select id="empList" parameterType="HashMap" resultType="HashMap">
+		select
+			x.empEmno, /*사원코드*/
+			x.empName, /*사원명*/
+			x.deptName, /*부서명*/
+			x.empRegDate, /*등록날짜*/
+			rank.rank_name rankName /*직급명*/
+		from 	
+		(select 
+			emp_emno empEmno, /*사원코드*/
+			emp_name empName, /*사원명*/
+			dept_name deptName, /*부서명*/
+			rank_code rankCode, /*등록날짜*/
+			emp_reg_date empRegDate /*직급명*/
+		from employee left join department 
+		on employee.dept_code = department.dept_code
+		where employee.emp_del_yn ='N')x left join rank
+		on x.rankCode = rank.rank_code
+		where 1=1
+		<if test="searchCnd !=null and searchCnd !=''">
+			<choose>
+				<when test="searchCnd == 'deptName'">
+					and x.deptName LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'rankName'">
+					and rank.rank_name LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+				<when test="searchCnd == 'empName'">
+					and x.empName LIKE CONCAT('%',#{searchWd},'%')
+				</when>
+			</choose>
+		</if>
+		limit #{noticeCount},#{viewNoticeMaxNum}
+	</select>
+	<select id="authorityDetail" resultType="HashMap">
+		select
+			x.empEmno, /*사원코드*/
+			x.empName, /*사원명*/
+			x.empAdminYn, /*관리자여부*/
+			x.deptName, /*부서명*/
+			rank.rank_name rankName /*직급명*/
+		from 	
+		(select 
+			emp_emno empEmno, /*사원코드*/
+			emp_name empName, /*사원명*/
+			emp_admin_yn empAdminYn, /*관리자여부*/
+			dept_name deptName, /*부서명*/
+			rank_code rankCode /*직급명*/
+		from employee left join department 
+		on employee.dept_code = department.dept_code
+		where employee.emp_del_yn ='N')x left join rank
+		on x.rankCode = rank.rank_code
+		where x.empEmno = #{empEmno}
+	</select>
+	<update id="empClassUpdate" parameterType="HashMap">
+		update employee set emp_admin_yn=#{empClass} where emp_emno=${empEmno}
+	</update>
+	<select id="authorityMenu" resultType="HashMap">
+		select
+			mn_no mnNo, /*메뉴코드*/
+			atr_attr atrAttr, /*권한메뉴속성*/
+			atr_aplystrt atrAplyStrt, /*권한적용시작날짜*/
+			atr_aplyfini atrAplyFini, /*권한적용종료날짜*/
+			atr_updtstrt atrUpdtStrt, /*데이터접근시작날짜*/
+			atr_updtfini atrUpdtFini /*데이터접근종료날짜*/
+		from authority
+		where mn_no = #{mnNo}
+		and emp_emno = #{empEmno} 
+	</select>
+	<select id="menuList" resultType="hashMap">
+		select
+			MN_NO mnNo, /*메뉴코드*/
+			MN_ATTR mnAttr, /*메뉴속성*/
+			MN_NAME mnName, /*메뉴명*/
+			MN_URL mnUrl /*메뉴 URL*/
+		from menu
+		where mn_no = #{mnNo}	
+	</select>
+	<insert id="authorityInsert" parameterType="HashMap">
+		insert into authority (
+								EMP_EMNO, /*사원코드*/
+								MN_NO,    /*메뉴명*/
+								ATR_ATTR, /*권한속성*/
+								ATR_APLYSTRT, /*권한시작날짜*/
+								ATR_APLYFINI, /*권한종료날짜*/
+								ATR_UPDTSTRT, /*데이터접근시작날짜*/
+								ATR_UPDTFINI) /*데이터접근종료날짜*/
+					values (
+								#{empEmno},
+								#{mnNo},
+								#{atrAttr},
+								#{atrAplyStrt},
+								#{atrAplyFini},
+								#{atrUpdtStrt},
+								#{atrUpdtFini}
+					); 
+	</insert>
+	<update id="authorityUpdate" parameterType="HashMap">
+		UPDATE authority
+			SET ATR_ATTR = #{atrAttr}, /*권한속성*/
+			ATR_APLYSTRT = #{atrAplyStrt}, /*권한시작날짜*/
+			ATR_APLYFINI = #{atrAplyFini}, /*권한종료날짜*/
+			ATR_UPDTSTRT = #{atrUpdtStrt}, /*데이터접근시작날짜*/
+			ATR_UPDTFINI = #{atrUpdtFini} /*데이터접근종료날짜*/
+		where EMP_EMNO = #{empEmno} /*사원코드*/
+		and MN_NO = #{mnNo} /*메뉴코드*/
+	</update>
+</mapper>
